@@ -1,4 +1,3 @@
-import argparse
 import os
 from typing import Callable
 from types import MappingProxyType
@@ -6,28 +5,11 @@ from datetime import datetime
 import platform
 from time import time
 
+from cloc.argparser import parser
+from cloc.parsing import parseDirectory, parseDirectoryNoVerbose, parseFile
 from cloc.utils import findCommentSymbols, getVersion
 from cloc.utils import OUTPUT_MAPPING
-from cloc.config import DEFAULTS
-from cloc.parsing import parseDirectory, parseDirectoryNoVerbose, parseFile
 
-parser: argparse.ArgumentParser = argparse.ArgumentParser(description="A simple CLI tool to count lines of code (LOC) of your files")
-
-parser.add_argument("-v", "--version", help="Current version of cloc", action="store_true")
-parser.add_argument("-d", "--dir", nargs=1, help="Specify the directory to scan. Either this or '-f' must be used")
-parser.add_argument("-f", "--file", nargs=1, help="Specify the file to scan. Either this or '-d' must be used")
-parser.add_argument("-mc", "--min-chars", nargs=1, type=int, help="[OPTIONAL] Specify the minimum number of non-whitespace characters a line should have to be considered an LOC", default=DEFAULTS.min_chars)
-parser.add_argument("-ss", "--single-symbol", nargs=1, help="[OPTIONAL] Specify the single-line comment symbol. By default, the comments are identified via file extension itself, Note that if this flag is specified with the directory flag, then all files within that directory are checked against this comment symbol")
-parser.add_argument("-ms", "--multiline-symbol", nargs=1, help="[OPTIONAL] Specify the multi-line comment symbols as a space-separated pair of opening and closing symbols. Behaves similiar to single-line comments")
-parser.add_argument("-xf", "--exclude-file", nargs="+", help="[OPTIONAL] Exclude files by name")
-parser.add_argument("-xd", "--exclude-dir", nargs="+", help="[OPTIONAL] Exclude directories by name")
-parser.add_argument("-xt", "--exclude-type", nargs="+", help="[OPTIONAL] Exclude files by extension")
-parser.add_argument("-id", "--include-dir", nargs="+", help="[OPTIONAL] Include directories by name")
-parser.add_argument("-if", "--include-file", nargs="+", help="[OPTIONAL] Include files by name")
-parser.add_argument("-it", "--include-type", nargs="+", help="[OPTIONAL] Include files by extension, useful for specificity when working with directories with files for different languages")
-parser.add_argument("-vb", "--verbose", help="Get LOC and total lines for every file scanned", action="store_true", default=DEFAULTS.verbose)
-parser.add_argument("-o", "--output", nargs=1, help="[OPTIONAL] Specify output file to dump counts into. If not specified, output is dumped to stdout. If output file is in .json, .toml, .yaml, or .db/.sql format, then output is ordered differently.")
-parser.add_argument("-r", "--recurse", help="[OPTIONAL] Recursively scan every sub-directory too", action="store_true", default=DEFAULTS.recurse)
 
 def main() -> None:
     args = parser.parse_args()
