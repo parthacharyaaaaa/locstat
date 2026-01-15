@@ -1,46 +1,71 @@
+import argparse
 import os
-from typing import Callable
+from typing import Callable, Optional
 from types import MappingProxyType
 from datetime import datetime
 import platform
 from time import time
 
 from cloc.argparser import parser
-from cloc.parsing import parseDirectory, parseDirectoryNoVerbose, parseFile
-from cloc.utils import findCommentSymbols, getVersion
+from cloc.parsing import parse_directory_verbose, parse_directory, parse_file
+from cloc.utils import find_comment_symbols, get_version
 from cloc.utils import OUTPUT_MAPPING
 
-
 def main() -> None:
-    args = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args()
 
     if args.version:
-        getVersion()
+        get_version()
         exit(200)
 
-    bIsFile: bool = False
+    is_file: bool = False
 
-    if(args.dir and args.file):
+    if (args.dir and args.file):
         print("ERROR: Both target directory and target file specified. Please specify only one")
         exit(500)
 
     if args.file:
         args.file = args.file[0]    # Fetch first (and only) entry from list since `nargs` param in parser.add_argument returns the args as a list
-        bIsFile = True
+        is_file = True
 
-    symbolData: dict = {}
+    singleline_symbol: Optional[bytes] = None
+    multiline_start_symbol: Optional[bytes] = None
+    multiline_end_symbol: Optional[bytes] = None
+
     if args.single_symbol:
-        symbolData["single"] = args.single_symbol[0].strip().encode()
+        singleline_symbol = args.single_symbol[0].strip().encode()
     if args.multiline_symbol:
         pairing = args.multiline_symbol[0].strip().split(" ")
         if len(pairing) != 2:
-            print(f"ERROR: Multiline symbols f{args.multiline_symbol[0]} must be space-separated pair, such as '/* */'")
+            print(f"Multiline symbols f{args.multiline_symbol[0]} must be space-separated pair, such as '/* */'")
             exit(500)
-        symbolData["multistart"] = pairing[0].encode()
-        symbolData['multiend'] = pairing[1].encode()
+        
+        multiline_start_symbol = pairing[0].encode()
+        multiline_end_symbol = pairing[1].encode()
+
+        # No symbols provided through the command line
+        if singleline_symbol and multiline_start_symbol:
+            comment_symbols = find_comment_symbols(args.file.split(".")[-1])
+            if isinstance(comment_symbols, tuple):
+                if isinstance(comment_symbols[0], bytes):
+                    multiline_start_symbol, multiline_end_symbol = comment_symbols
+            if isinstance(comment_symbols, bytes):
+                # Single line only
+                singleline_symbol = comment_symbols
+            elif len(comment_symbols) == 2:
+                # Multiline only
+                multiline_start_symbol, multiline_end_symbol = comment_symbols
+            else:
+                # Both single line and multiline
+                singleline_symbol = comment_symbols[0]
+                multiline_start_symbol, multiline_end_symbol = comment_symbols[1]
+        else:
+            singleline_symbol = symbol_data.get("single")
+            multiline_start_symbol = symbol_data.get("multistart")
+            multiline_end_symbol = symbol_data.get("multiend")
 
     # Single file, no need to check and validate other DEFAULTS
-    if bIsFile:     
+    if is_file:     
         if not os.path.exists(args.file):
             print(f"ERROR: {args.file} not found")       
             exit(404)
@@ -48,33 +73,12 @@ def main() -> None:
             print(f"ERROR: {args.file} is not a valid file")
             exit(500)
 
-        epoch = time()
-        # Fetch comment symbols if not specified via -cs
-        singleLine, multiLineStart, multiLineEnd = None, None, None
-        if not symbolData:
-            symbolData = findCommentSymbols(args.file.split(".")[-1])
-            if isinstance(symbolData, bytes):
-                # Single line only
-                singleLine: bytes = symbolData
-            elif isinstance(symbolData[1], bytes):
-                # Multiline only
-                multiLineStart: bytes = symbolData[0]
-                multiLineEnd: bytes = symbolData[1]
-            else:
-                # Both single line and multiline
-                singleLine: bytes = symbolData[0]
-                multiLineStart: bytes = symbolData[1][0]
-                multiLineEnd: bytes = symbolData[1][1]
-        else:
-            singleLine = symbolData.get("single")
-            multiLineStart = symbolData.get("multistart")
-            multiLineEnd = symbolData.get("multiend")
-
+        epoch: float = time()
         
-        loc, total = parseFile(filepath=args.file, 
-                               singleCommentSymbol=singleLine, 
-                               multiLineStartSymbol=multiLineStart, 
-                               multiLineEndSymbol=multiLineEnd, 
+        loc, total = parse_file(filepath=args.file, 
+                               singleCommentSymbol=singleline_symbol, 
+                               multiLineStartSymbol=multiline_start_symbol, 
+                               multiLineEndSymbol=multiline_end_symbol, 
                                minChars=args.min_chars if isinstance(args.min_chars, int) else args.min_chars[0])
         outputMapping: MappingProxyType = MappingProxyType({"loc" : loc, "total" : total, "time" : f"{time()-epoch:.3f}s", "scanned at" : datetime.now().strftime("%d/%m/%y, at %H:%M:%S"), "platform" : platform.system()})
         if not args.output:
@@ -151,8 +155,8 @@ def main() -> None:
 
     epoch = time()
     if args.verbose:
-        outputMapping = parseDirectory(dirData=root_data,
-                                       customSymbols=symbolData,
+        outputMapping = parse_directory_verbose(dirData=root_data,
+                                       customSymbols=symbol_data,
                                        fileFilterFunction=fileFilter,
                                        directoryFilterFunction=directoryFilter,
                                        minChars=args.min_chars if isinstance(args.min_chars, int) else args.min_chars[0],
@@ -162,8 +166,8 @@ def main() -> None:
         outputMapping["general"]["scanned at"] = datetime.now().strftime("%d/%m/%y, at %H:%M:%S")
         outputMapping["general"]["platform"] = platform.system()
     else:
-        outputMapping = parseDirectoryNoVerbose(dirData=root_data,
-                                                customSymbols=symbolData,
+        outputMapping = parse_directory(dirData=root_data,
+                                                customSymbols=symbol_data,
                                                 fileFilterFunction=fileFilter,
                                                 directoryFilterFunction=directoryFilter,
                                                 minChars=args.min_chars if isinstance(args.min_chars, int) else args.min_chars[0],

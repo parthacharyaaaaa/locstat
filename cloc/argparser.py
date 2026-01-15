@@ -2,7 +2,7 @@ import argparse
 from typing import Final
 
 from cloc.config import DEFAULTS
-from cloc.utils import OUTPUT_MAPPING, dumpOutputSTD
+from cloc.utils import OUTPUT_MAPPING, dump_std_output
 
 __all__ = ("parser",)
 
@@ -77,7 +77,7 @@ parser.add_argument("-o", "--output",
                     help=" ".join(("Specify output file to dump counts into.",
                                    "If not specified, output is dumped to stdout.",
                                    "If output file is in",
-                                   f"{', '.join(k for k,v in OUTPUT_MAPPING if v != dumpOutputSTD)}",
+                                   f"{', '.join(k for k,v in OUTPUT_MAPPING if v != dump_std_output)}",
                                    "then output is formatted differently.")))
 
 parser.add_argument("-r", "--recurse",

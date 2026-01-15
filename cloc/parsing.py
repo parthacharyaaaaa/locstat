@@ -5,9 +5,9 @@ from itertools import islice
 import ctypes
 
 from cloc.ctypes_interfacing import lib, BatchScanResult
-from cloc.utils import findCommentSymbols
+from cloc.utils import find_comment_symbols
 
-def parseFile(filepath: os.PathLike, singleCommentSymbol: str, multiLineStartSymbol: str | None = None, multiLineEndSymbol: str | None = None, minChars: int = 0) -> tuple[int, int]:
+def parse_file(filepath: os.PathLike, singleCommentSymbol: str, multiLineStartSymbol: str | None = None, multiLineEndSymbol: str | None = None, minChars: int = 0) -> tuple[int, int]:
     loc: int = 0
     total: int = 0
     singleCommentSymbolLength: int = 0 if not singleCommentSymbol else len(singleCommentSymbol)
@@ -28,7 +28,7 @@ def parseFile(filepath: os.PathLike, singleCommentSymbol: str, multiLineStartSym
         return loc, total
   
 
-def parseDirectoryNoVerbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSymbols: dict = None, fileFilterFunction: Callable = lambda outputMapping: True, directoryFilterFunction: Callable = lambda outputMapping : False, minChars:int = 0, recurse:bool = False, level:int = 0, loc: int = 0, totalLines: int = 0, outputMapping: dict = None) -> dict[str, str | int]:
+def parse_directory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSymbols: dict = None, fileFilterFunction: Callable = lambda outputMapping: True, directoryFilterFunction: Callable = lambda outputMapping : False, minChars:int = 0, recurse:bool = False, level:int = 0, loc: int = 0, totalLines: int = 0, outputMapping: dict = None) -> dict[str, str | int]:
     materialisedDirData: list[os.PathLike] = next(dirData)
     rootDirectory: os.PathLike = materialisedDirData[0]
 
@@ -42,7 +42,7 @@ def parseDirectoryNoVerbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]],
         
         singleLine, multiLineStart, multiLineEnd = None, None, None
         if not customSymbols:
-            symbolData = findCommentSymbols(file.split(".")[-1])  
+            symbolData = find_comment_symbols(file.split(".")[-1])  
 
             if isinstance(symbolData, bytes):
                 singleLine = symbolData
@@ -56,7 +56,7 @@ def parseDirectoryNoVerbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]],
             multiLineStart = customSymbols.get("multistart")
             multiLineEnd = customSymbols.get("multiend")
 
-        l, tl = parseFile(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
+        l, tl = parse_file(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
         totalLines += tl
         loc += l
 
@@ -72,7 +72,7 @@ def parseDirectoryNoVerbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]],
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parseDirectory(subdirectoryData, customSymbols ,fileFilterFunction, directoryFilterFunction, True, level+1)
+        op = parse_directory_verbose(subdirectoryData, customSymbols ,fileFilterFunction, directoryFilterFunction, True, level+1)
 
         localLOC, localTotal = op.pop("general").values()
         outputMapping["loc"] = outputMapping["loc"] + localLOC
@@ -81,7 +81,7 @@ def parseDirectoryNoVerbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]],
 
     return outputMapping
 
-def parseDirectory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSymbols: dict = None, fileFilterFunction: Callable = lambda outputMapping: True, directoryFilterFunction: Callable = lambda outputMapping : False, minChars: int = 0, recurse:bool = False, level:int = 0, loc: int = 0, totalLines: int = 0, outputMapping: dict = None) -> tuple[int, int] | None:
+def parse_directory_verbose(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSymbols: dict = None, fileFilterFunction: Callable = lambda outputMapping: True, directoryFilterFunction: Callable = lambda outputMapping : False, minChars: int = 0, recurse:bool = False, level:int = 0, loc: int = 0, totalLines: int = 0, outputMapping: dict = None) -> tuple[int, int] | None:
     '''#### Iterate over every file in given root directory, and optionally perform the same for every file within its subdirectories\n
     #### args:
     dirData: Output of os.walk() on root directory\n
@@ -105,7 +105,7 @@ def parseDirectory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSy
             continue
         singleLine, multiLineStart, multiLineEnd = None, None, None
         if not customSymbols:
-            symbolData = findCommentSymbols(file.split(".")[-1])  
+            symbolData = find_comment_symbols(file.split(".")[-1])  
             if isinstance(symbolData, bytes):
                 singleLine = symbolData
             elif isinstance(symbolData[1], bytes):
@@ -118,7 +118,7 @@ def parseDirectory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSy
             multiLineStart = customSymbols.get("multistart")
             multiLineEnd = customSymbols.get("multiend")
 
-        l, tl = parseFile(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
+        l, tl = parse_file(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
         totalLines += tl
         loc += l
         if not outputMapping.get(rootDirectory):
@@ -137,7 +137,7 @@ def parseDirectory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSy
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parseDirectory(subdirectoryData, customSymbols, fileFilterFunction, directoryFilterFunction, True, level+1)
+        op = parse_directory_verbose(subdirectoryData, customSymbols, fileFilterFunction, directoryFilterFunction, True, level+1)
 
         localLOC, localTotal = op.pop("general").values()
         outputMapping["general"]["loc"] = outputMapping["general"]["loc"] + localLOC

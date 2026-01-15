@@ -8,7 +8,7 @@ from typing import Mapping, Optional, Union
 
 from cloc.config import LANGUAGES, WORKING_DIRECTORY
 
-def getVersion():
+def get_version():
     with open(WORKING_DIRECTORY / "config.json") as config:
         version: str = orjson.loads(config.read()).get("version")
         if not version:
@@ -16,7 +16,7 @@ def getVersion():
         else:
             print(f"py-cloc {version}")
 
-def findCommentSymbols(extension: str,
+def find_comment_symbols(extension: str,
                        symbolMapping: Union[Mapping[str, Mapping[str, str]], None] = None
                        ) -> Union[bytes, tuple[bytes, bytes], tuple[bytes, tuple[bytes, bytes]]]:
         '''### Find symbols that denote a comment for a specific language
@@ -50,7 +50,7 @@ def findCommentSymbols(extension: str,
         return (singleline_symbol.encode(),
                 (multiline_symbol_pair[0].encode(), multiline_symbol_pair[1].encode()))
 
-def dumpOutputSTD(outputMapping: dict, fpath: os.PathLike) -> None:
+def dump_std_output(outputMapping: dict, fpath: os.PathLike) -> None:
     '''Dump output to a standard text/log file'''
     with open(fpath, "w+") as file:
         if not outputMapping.get("general"):
@@ -65,13 +65,13 @@ def dumpOutputSTD(outputMapping: dict, fpath: os.PathLike) -> None:
             outputString = "\n".join(f"\t{k}:LOC: {v['loc']} Total: {v['total_lines']}" for k,v in entries.items())
             file.write(f"{directory}\n{outputString}\n")
 
-def dumpOutputJSON(outputMapping: dict, fpath: os.PathLike) -> None:
+def dump_json_output(outputMapping: dict, fpath: os.PathLike) -> None:
     '''Dump output to JSON file, with proper formatting'''
     with open(os.path.join(os.getcwd(), fpath), "wb+") as dumpFile:
         dumpFile.write(orjson.dumps(outputMapping, option=orjson.OPT_INDENT_2, default=dict))
     return
 
-def dumpOutputSQL(outputMapping: dict, fpath: os.PathLike) -> None:
+def dump_sql_output(outputMapping: dict, fpath: os.PathLike) -> None:
     '''Dump output to a SQLite database (.db, .sql)'''
     
     dbConnection: sqlite3.Connection = sqlite3.connect(fpath, isolation_level="IMMEDIATE")
@@ -124,7 +124,7 @@ def dumpOutputSQL(outputMapping: dict, fpath: os.PathLike) -> None:
         dbConnection.close()
         dbConnection = None
 
-def dumpOutputCSV(outputMapping: dict, fpath: os.PathLike) -> None:
+def dump_csv_output(outputMapping: dict, fpath: os.PathLike) -> None:
     with open(fpath, newline='', mode="w+") as csvFile:
         writer = csv.writer(csvFile)
         generalData: dict = outputMapping.get("general")
@@ -144,11 +144,11 @@ def dumpOutputCSV(outputMapping: dict, fpath: os.PathLike) -> None:
             writer.writerows((dir, filename, fileData["loc"], fileData["total_lines"]) for dir, file in outputMapping.items() for filename, fileData in file.items())
 
 OUTPUT_MAPPING: MappingProxyType = MappingProxyType({
-    "json" : dumpOutputJSON,
-    "db" : dumpOutputSQL,
-    "sql" : dumpOutputSQL,
-    "csv" : dumpOutputCSV,
-    "txt" : dumpOutputSTD,
-    "log" : dumpOutputSTD,
-    None : dumpOutputSTD
+    "json" : dump_json_output,
+    "db" : dump_sql_output,
+    "sql" : dump_sql_output,
+    "csv" : dump_csv_output,
+    "txt" : dump_std_output,
+    "log" : dump_std_output,
+    None : dump_std_output
 })
