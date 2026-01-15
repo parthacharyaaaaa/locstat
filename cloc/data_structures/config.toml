@@ -1,0 +1,4 @@
+[defaults]
+recurse=false
+verbose=true
+minimum_characters=0
