@@ -1,25 +1,16 @@
 '''Helper functions'''
-from types import MappingProxyType
 import csv
 import os
+import orjson
+import sqlite3
+from types import MappingProxyType
 from typing import Mapping, Optional, Union
 
-from cloc.config import LANGUAGES
-
-# Dynamic import in case orjson is found in the Python environment (vroom vroom)
-bOrjson: bool = True
-try:
-    import orjson
-except ImportError:
-    bOrjson = False
-    import json
+from cloc.config import LANGUAGES, WORKING_DIRECTORY
 
 def getVersion():
-    with open(os.path.join(os.path.dirname(__file__), "config.json")) as config:
-        if bOrjson:
-            version: str = orjson.loads(config.read()).get("version")
-        else:
-            version: str = json.loads(config.read()).get("version")
+    with open(WORKING_DIRECTORY / "config.json") as config:
+        version: str = orjson.loads(config.read()).get("version")
         if not version:
             print("py-cloc: version not found!")
         else:
@@ -76,21 +67,12 @@ def dumpOutputSTD(outputMapping: dict, fpath: os.PathLike) -> None:
 
 def dumpOutputJSON(outputMapping: dict, fpath: os.PathLike) -> None:
     '''Dump output to JSON file, with proper formatting'''
-    if bOrjson:
-        with open(os.path.join(os.getcwd(), fpath), "wb+") as dumpFile:
-            dumpFile.write(orjson.dumps(outputMapping, option=orjson.OPT_INDENT_2, default=dict))
-        return
-
-    with open(os.path.join(os.getcwd(), fpath), "w+") as dumpFile:
-        dumpFile.write(json.dumps(outputMapping, skipkeys=True,
-                                ensure_ascii=True,
-                                indent="\t",
-                                default=dict))
+    with open(os.path.join(os.getcwd(), fpath), "wb+") as dumpFile:
+        dumpFile.write(orjson.dumps(outputMapping, option=orjson.OPT_INDENT_2, default=dict))
+    return
 
 def dumpOutputSQL(outputMapping: dict, fpath: os.PathLike) -> None:
     '''Dump output to a SQLite database (.db, .sql)'''
-    # Best language fr, has SQL API built-in
-    import sqlite3
     
     dbConnection: sqlite3.Connection = sqlite3.connect(fpath, isolation_level="IMMEDIATE")
     dbCursor: sqlite3.Cursor = dbConnection.cursor()

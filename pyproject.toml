@@ -24,7 +24,6 @@ Repository = "https://github.com/parthacharyaaaaa/cloc"
 Issues = "https://github.com/parthacharyaaaaa/cloc/issues"
 
 [project.optional-dependencies]
-orjson=["orjson"]
 
 [project.scripts]
 pycloc = "cloc.__main__:main"
