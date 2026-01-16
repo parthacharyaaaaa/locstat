@@ -10,6 +10,7 @@ from types import MappingProxyType
 
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
+from cloc.utilities.presentation import OUTPUT_MAPPING, OutputFunction, dump_std_output
 from cloc.parsing import parse_directory_verbose, parse_directory, parse_file
 from cloc.utils import get_version
 from cloc.utils import OUTPUT_MAPPING
@@ -163,11 +164,11 @@ def main(line: Sequence[str]) -> int:
 
     print("=================== SCAN COMPLETE ====================")
     if args.output:
-        outputFiletype: str = args.output[0].split(".")[-1].lower()
+        output_extension: str = args.output[0].split(".")[-1].lower()
 
         # Fetch output function based on file extension, default to standard write logic
-        outputFunction: Callable = OUTPUT_MAPPING.get(outputFiletype, OUTPUT_MAPPING[None])
-        outputFunction(outputMapping=outputMapping, fpath=args.output[0])
+        outputFunction: OutputFunction = OUTPUT_MAPPING.get(output_extension, dump_std_output)
+        outputFunction(output_mapping=outputMapping, filepath=args.output[0])
     else:
         print(outputMapping)
     
