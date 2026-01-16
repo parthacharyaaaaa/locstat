@@ -5,8 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Any, Final, MutableMapping, Optional, Sequence, Union
-from types import MappingProxyType
+from typing import Final, MutableMapping, Optional, Sequence, Union
 
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
@@ -18,12 +17,6 @@ def main(line: Sequence[str]) -> int:
     config: Final[ClocConfig] = ClocConfig.load_toml(Path(__file__).parent / "data_structures" / "config.toml")
     parser: Final[argparse.ArgumentParser] = initialize_parser(config)
     args: argparse.Namespace = parse_arguments(line, parser)
-
-    is_file: bool = False
-
-    if args.file:
-        args.file = args.file[0]    # Fetch first (and only) entry from list since `nargs` param in parser.add_argument returns the args as a list
-        is_file = True
 
     output_mapping: Optional[OutputMapping] = None
 
@@ -44,16 +37,9 @@ def main(line: Sequence[str]) -> int:
         multiline_end_symbol = pairing[1].encode()
     
     # Single file, no need to check and validate other default values
-    if is_file:
-        file: Final[str] = args.file.strip()
-        if not os.path.exists(args.file):
-            raise FileNotFoundError(f"File {args.file} not found")
-        if not os.path.isfile(args.file):
-            raise ValueError(f"File argument {args.file} is not a valid file")
-        
-
+    if args.file:
         if not(args.single_symbol and args.multilline_symbol):
-            comment_symbols = config.find_comment_symbol(file.split(".")[-1])
+            comment_symbols = config.find_comment_symbol(args.file.split(".")[-1])
 
             # Single-line comment symbol only
             if isinstance(comment_symbols, bytes):
@@ -81,7 +67,6 @@ def main(line: Sequence[str]) -> int:
                           "platform" : platform.system()}
         
     else:
-        # Directory
         symbol_data: Optional[dict[str, bytes]] = {}
         if singleline_symbol:
             symbol_data['singleline'] = singleline_symbol
@@ -89,9 +74,6 @@ def main(line: Sequence[str]) -> int:
             assert multiline_end_symbol
             symbol_data['multistart'] = multiline_start_symbol
             symbol_data['multiend'] = multiline_end_symbol
-        args.dir = args.dir[0]  # Fetch first (and only) entry from list since `nargs` param in parser.add_argument returns the args as a list
-        if not os.path.isdir(args.dir):
-            raise NotADirectoryError(f"{args.dir} is not a valid directory")
         
         ### Handle file-level filtering logic, if any ###
         bFileFilter: bool = False

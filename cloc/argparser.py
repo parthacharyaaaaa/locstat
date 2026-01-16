@@ -1,10 +1,23 @@
 import argparse
+import os
 from typing import Final, Sequence
 
 from cloc.data_structures.config import ClocConfig
 from cloc.utilities.presentation import OUTPUT_MAPPING, dump_std_output
 
 __all__ = ("initialize_parser", "parse_arguments")
+
+def _validate_directory(arg: str) -> str:
+    arg = arg.strip()
+    if not os.path.isdir(arg):
+        raise NotADirectoryError(f"Directory {arg} could not be found")
+    return arg
+
+def _validate_filepath(arg: str) -> str:
+    arg = arg.strip()
+    if not os.path.isfile(arg):
+        raise NotADirectoryError(f"File {arg} could not be found")
+    return arg
 
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     '''Instantiate and return an argument parser
@@ -24,11 +37,11 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     # Target
     target_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
     target_group.add_argument("-d", "--dir",
-                        nargs=1,
+                        type=_validate_directory,
                         help="Specify the directory to scan. Either this or '-f' must be used")
 
     target_group.add_argument("-f", "--file",
-                        nargs=1,
+                        type=_validate_filepath,
                         help="Specify the file to scan. Either this or '-d' must be used")
 
     # Parsing logic manipulation
