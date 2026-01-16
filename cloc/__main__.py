@@ -1,17 +1,21 @@
 import argparse
 import os
-from typing import Callable, Optional
-from types import MappingProxyType
-from datetime import datetime
 import platform
+from datetime import datetime
+from pathlib import Path
 from time import time
+from typing import Callable, Final, Optional
+from types import MappingProxyType
 
-from cloc.argparser import parser
+from cloc.argparser import initialize_parser
+from cloc.data_structures.config import ClocConfig
 from cloc.parsing import parse_directory_verbose, parse_directory, parse_file
 from cloc.utils import find_comment_symbols, get_version
 from cloc.utils import OUTPUT_MAPPING
 
 def main() -> None:
+    config: Final[ClocConfig] = ClocConfig.load_toml(Path(__file__).parent / "data_structures" / "config.toml")
+    parser: Final[argparse.ArgumentParser] = initialize_parser(config)
     args: argparse.Namespace = parser.parse_args()
 
     if args.version:
