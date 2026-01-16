@@ -20,7 +20,7 @@ class ClocConfig(metaclass=SingletonMeta):
     # CLI Options
     recurse: bool = False
     verbose: bool = True
-    minimum_characters: bool = True
+    minimum_characters: int = 0
 
     # Language metadata
     language_metadata: MappingProxyType[str, MappingProxyType[str, str]]
@@ -52,8 +52,10 @@ class ClocConfig(metaclass=SingletonMeta):
                 additional_kwargs[tag] = attr
                 continue
             if not isinstance(attr, cls.__annotations__[tag]):
-                raise InvalidConfigurationException(" ".join((f"Invalid type {type(attr)} for configuration attribute {tag},")),
-                                                    f"expected {cls.__annotations__[tag]}")
+                raise InvalidConfigurationException(
+                    message=" ".join((f"Invalid type {type(attr)} for configuration attribute {tag},",
+                                      f"expected {cls.__annotations__[tag]}"))
+                )
             object.__setattr__(instance, tag, attr)
 
         object.__setattr__(instance, "additional_kwargs", additional_kwargs)
