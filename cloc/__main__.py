@@ -11,7 +11,7 @@ from types import MappingProxyType
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
 from cloc.parsing import parse_directory_verbose, parse_directory, parse_file
-from cloc.utils import find_comment_symbols, get_version
+from cloc.utils import get_version
 from cloc.utils import OUTPUT_MAPPING
 
 def main(line: Sequence[str]) -> None:
@@ -29,57 +29,51 @@ def main(line: Sequence[str]) -> None:
         args.file = args.file[0]    # Fetch first (and only) entry from list since `nargs` param in parser.add_argument returns the args as a list
         is_file = True
 
-    singleline_symbol: Optional[bytes] = None
-    multiline_start_symbol: Optional[bytes] = None
-    multiline_end_symbol: Optional[bytes] = None
-
-    if args.single_symbol:
-        singleline_symbol = args.single_symbol[0].strip().encode()
-    if args.multiline_symbol:
-        pairing = args.multiline_symbol[0].strip().split(" ")
-        if len(pairing) != 2:
-            print(f"Multiline symbols f{args.multiline_symbol[0]} must be space-separated pair, such as '/* */'")
-            exit(500)
-        
-        multiline_start_symbol = pairing[0].encode()
-        multiline_end_symbol = pairing[1].encode()
-
-        # No symbols provided through the command line
-        if singleline_symbol and multiline_start_symbol:
-            comment_symbols = find_comment_symbols(args.file.split(".")[-1])
-            if isinstance(comment_symbols, tuple):
-                if isinstance(comment_symbols[0], bytes):
-                    multiline_start_symbol, multiline_end_symbol = comment_symbols
-            if isinstance(comment_symbols, bytes):
-                # Single line only
-                singleline_symbol = comment_symbols
-            elif len(comment_symbols) == 2:
-                # Multiline only
-                multiline_start_symbol, multiline_end_symbol = comment_symbols
-            else:
-                # Both single line and multiline
-                singleline_symbol = comment_symbols[0]
-                multiline_start_symbol, multiline_end_symbol = comment_symbols[1]
-        else:
-            singleline_symbol = symbol_data.get("single")
-            multiline_start_symbol = symbol_data.get("multistart")
-            multiline_end_symbol = symbol_data.get("multiend")
-
-    # Single file, no need to check and validate other DEFAULTS
-    if is_file:     
+    # Single file, no need to check and validate other default values
+    if is_file:
         if not os.path.exists(args.file):
-            print(f"ERROR: {args.file} not found")       
-            exit(404)
+            raise FileNotFoundError(f"File {args.file} not found")
         if not os.path.isfile(args.file):
-            print(f"ERROR: {args.file} is not a valid file")
-            exit(500)
+            raise ValueError(f"File argument {args.file} is not a valid file")
+        
+        singleline_symbol: Optional[bytes] = None
+        multiline_start_symbol: Optional[bytes] = None
+        multiline_end_symbol: Optional[bytes] = None
+
+        # No symbols provided through the command line, consult languages metadata
+        if not(args.single_symbol and args.multilline_symbol):
+            comment_symbols = config.find_comment_symbol(args.file.split(".")[-1])
+
+            # Single-line comment symbol only
+            if isinstance(comment_symbols, bytes):
+                singleline_symbol = comment_symbols
+            elif isinstance(comment_symbols, tuple):
+                if isinstance(comment_symbols[1], tuple):
+                    # Both single-line and multi-line symbols
+                    singleline_symbol = comment_symbols[0]
+                    multiline_start_symbol, multiline_end_symbol = comment_symbols[1]
+                else:
+                    # Multi-line symbols only
+                    multiline_start_symbol, multiline_end_symbol = comment_symbols
+
+        else:
+            if args.single_symbol:
+                singleline_symbol = args.single_symbol[0].strip().encode()
+            if args.multiline_symbol:
+                pairing = args.multiline_symbol[0].strip().split(" ")
+                if len(pairing) != 2:
+                    raise ValueError(" ".join((f"Multiline symbols {args.multiline_symbol[0]} must",
+                                               "be space-separated pair, such as '/* */'")))
+                
+                multiline_start_symbol = pairing[0].encode()
+                multiline_end_symbol = pairing[1].encode()
 
         epoch: float = time()
         
         loc, total = parse_file(filepath=args.file, 
-                               singleCommentSymbol=singleline_symbol, 
-                               multiLineStartSymbol=multiline_start_symbol, 
-                               multiLineEndSymbol=multiline_end_symbol, 
+                               singleline_symbol=singleline_symbol, 
+                               multiline_start_symbol=multiline_start_symbol, 
+                               multiline_end_symbol=multiline_end_symbol, 
                                minChars=args.min_chars if isinstance(args.min_chars, int) else args.min_chars[0])
         outputMapping: MappingProxyType = MappingProxyType({"loc" : loc, "total" : total, "time" : f"{time()-epoch:.3f}s", "scanned at" : datetime.now().strftime("%d/%m/%y, at %H:%M:%S"), "platform" : platform.system()})
         if not args.output:
