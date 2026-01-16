@@ -2,10 +2,10 @@ import argparse
 import os
 import platform
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
-from time import time
-from typing import Any, Final, MutableMapping, Optional, Sequence, Union
+from typing import Any, Callable, Final, MutableMapping, Optional, Sequence, Union
 
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
@@ -53,7 +53,7 @@ def main(line: Sequence[str]) -> int:
                     # Multi-line symbols only
                     multiline_start_symbol, multiline_end_symbol = comment_symbols  # type: ignore
         
-        epoch: float = time()
+        epoch: float = time.time()
         loc, total = parse_file(filepath=args.file, 
                                 singleline_symbol=singleline_symbol, 
                                 multiline_start_symbol=multiline_start_symbol, 
@@ -62,7 +62,7 @@ def main(line: Sequence[str]) -> int:
         
         output_mapping = {"loc" : loc,
                           "total" : total,
-                          "time" : f"{time()-epoch:.3f}s",
+                          "time" : f"{time.time()-epoch:.3f}s",
                           "scanned at" : datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
                           "platform" : platform.system()}
         
@@ -74,65 +74,52 @@ def main(line: Sequence[str]) -> int:
             assert multiline_end_symbol
             symbol_data['multistart'] = multiline_start_symbol
             symbol_data['multiend'] = multiline_end_symbol
-        
-        ### Handle file-level filtering logic, if any ###
-        bFileFilter: bool = False
 
         # Either inclusion or exclusion can be specified, but not both
-        bInclusion: bool = bool(args.include_type or args.include_file)
-        if bInclusion or (args.exclude_file or args.exclude_type):
-            bFileFilter = True
+        inclusion_applied: bool = bool(args.include_type or args.include_file)
+        file_filter_applied = bool(inclusion_applied or (args.exclude_file or args.exclude_type)) 
 
         # Can use short circuit now since we are sure that only inclusion or exclusion has been specified
         extensions: list[str] = args.exclude_type or args.include_type or []
         files: list[str] = args.exclude_file or args.include_file or []
-        dirs : list[str] = args.exclude_dir or args.include_dir or []
 
-        # Casting to set for faster lookups
-        extensionSet: frozenset = frozenset(extension for extension in extensions)
-        fileSet: frozenset = frozenset(file for file in files)
+        extensionSet: frozenset[str] = frozenset(extension for extension in extensions)
+        fileSet: frozenset[str] = frozenset(file for file in files)
 
         # Function for determining valid files
-        if bFileFilter:
-            fileFilter = lambda file: (file.split(".")[-1] in extensionSet or file in fileSet) if bInclusion else (file.split(".")[-1] not in extensionSet and file not in fileSet)
+        if file_filter_applied:
+            file_filter: Callable[[str], bool] = lambda file: ((file.split(".")[-1] in extensionSet
+                                                                or file in fileSet)
+                                                               if inclusion_applied else
+                                                               (file.split(".")[-1] not in extensionSet
+                                                                and file not in fileSet))
         else:
-            fileFilter = lambda _ : True    # No file filter logic given, return True blindly
+            file_filter = lambda _ : True    # No file filter logic given, return True always
         
-        ### Handle direcotory-level filtering logic, if any ###
-        bDirFilter: bool = args.include_dir or args.exclude_dir
-
-        if bDirFilter:
-            bDirInclusion: bool = False
-            directories: set = set()
-            
-            if args.include_dir:
-                directories = set(args.include_dir)
-                bDirInclusion = True
-            directories = set(args.exclude_dir)
-
-            # Cast for faster lookups
-            dirSet: frozenset = frozenset(dir for dir in directories)
-            
-            directoryFilter = lambda dir : dir in dirSet if bInclusion else dir not in dirSet
+        if bool(args.include_dir or args.exclude_dir):
+            directory_set: frozenset[str] = frozenset(directory for directory in args.include_dir or args.exclude_dir)
+            directory_filter: Callable[[str], bool] = lambda dir : (dir in directory_set if inclusion_applied
+                                                                    else dir not in directory_set)
         else:
-            directoryFilter = lambda _ : False if not args.recurse else True          # No directory filters given, accept subdirectories based on recurse flag
+            # No directory filters given, accept subdirectories based on recurse flag
+            directory_filter = lambda _ : bool(args.recurse)
 
-        root: os.PathLike = os.path.abspath(args.dir)
+        root: str = os.path.abspath(args.dir)
         root_data = os.walk(root)
 
-        epoch = time()
+        epoch: float = time.time()
         kwargs: dict[str, Any] = {"directory_data" : root_data,
                                   "config" : config,
-                                  "custom_symbols" : symbol_data,
-                                  "file_filter_function" : fileFilter,
-                                  "directory_filter_function" : directoryFilter,
+                                  "custom_symbols" : symbol_data or None,
+                                  "file_filter_function" : file_filter,
+                                  "directory_filter_function" : directory_filter,
                                   "minimum_characters" : args.min_chars,
                                   "recurse" : args.recurse}
         
         output_mapping = parse_directory_verbose(**kwargs) if args.verbose else parse_directory(**kwargs)
         
         assert isinstance(output_mapping["general"], MutableMapping)
-        output_mapping["general"]["time"] = f"{time()-epoch:.3f}s"
+        output_mapping["general"]["time"] = f"{time.time()-epoch:.3f}s"
         output_mapping["general"]["scanned at"] = datetime.now().strftime("%d/%m/%y, at %H:%M:%S")
         output_mapping["general"]["platform"] = platform.system()
 
