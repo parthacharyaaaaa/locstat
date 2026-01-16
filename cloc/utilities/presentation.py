@@ -12,12 +12,6 @@ __all__ = ("dump_std_output",
            "dump_csv_output",
            "OUTPUT_MAPPING")
 
-class OutputFunction(Protocol):
-    def __call__(self,
-                 output_mapping: Mapping[str, Mapping[str, Any]],
-                 filepath: Union[str, os.PathLike[str]]) -> None:
-        ...
-
 def dump_std_output(output_mapping: Mapping[str, Mapping[str, Any]],
                     filepath: Union[str, os.PathLike[str]]) -> None:
     '''Dump output to a standard text/log file'''
