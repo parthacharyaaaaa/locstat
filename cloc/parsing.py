@@ -1,32 +1,36 @@
 '''Module to hold all parsing logic, at both file and directory levels'''
 import os
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Optional
 from itertools import islice
 import ctypes
 
 from cloc.ctypes_interfacing import lib, BatchScanResult
 from cloc.utils import find_comment_symbols
 
-def parse_file(filepath: os.PathLike, singleCommentSymbol: str, multiLineStartSymbol: str | None = None, multiLineEndSymbol: str | None = None, minChars: int = 0) -> tuple[int, int]:
+def parse_file(filepath: str,
+               singleline_symbol: Optional[bytes] = None,
+               multiline_start_symbol: Optional[bytes] = None,
+               multiline_end_symbol: Optional[bytes] = None,
+               minChars: int = 0) -> tuple[int, int]:
     loc: int = 0
     total: int = 0
-    singleCommentSymbolLength: int = 0 if not singleCommentSymbol else len(singleCommentSymbol)
-    multiCommentStartSymbolLength: int = 0 if not multiLineStartSymbol else len(multiLineStartSymbol)
-    multiCommentEndSymbolLength: int = 0 if not multiLineEndSymbol else len(multiLineEndSymbol)
+    singleline_symbol_length: int = 0 if not singleline_symbol else len(singleline_symbol)
+    multiline_start_symbol_length: int = 0 if not multiline_start_symbol else len(multiline_start_symbol)
+    multiline_end_symbol_length: int = 0 if not multiline_end_symbol else len(multiline_end_symbol)
+
     with open(filepath, 'rb') as file:
         commentedBlock: bool = False            # Multiple multilineStarts will still have the same effect as one, so a single flag is enough
 
         while batch := list(islice(file, 100)):
             batchSize = len(batch)
             
-            batchScanResult: BatchScanResult = lib.scanBatch((ctypes.c_char_p * batchSize)(*batch), batchSize, commentedBlock, minChars, singleCommentSymbol, singleCommentSymbolLength, multiLineStartSymbol, multiCommentStartSymbolLength, multiLineEndSymbol, multiCommentEndSymbolLength)
+            batchScanResult: BatchScanResult = lib.scanBatch((ctypes.c_char_p * batchSize)(*batch), batchSize, commentedBlock, minChars, singleline_symbol, singleline_symbol_length, multiline_start_symbol, multiline_start_symbol_length, multiline_end_symbol, multiline_end_symbol_length)
 
             loc += batchScanResult.validLines
             total += batchSize
 
             commentedBlock = batchScanResult.commentedBlock
         return loc, total
-  
 
 def parse_directory(dirData: Iterator[tuple[Any, list[Any], list[Any]]], customSymbols: dict = None, fileFilterFunction: Callable = lambda outputMapping: True, directoryFilterFunction: Callable = lambda outputMapping : False, minChars:int = 0, recurse:bool = False, level:int = 0, loc: int = 0, totalLines: int = 0, outputMapping: dict = None) -> dict[str, str | int]:
     materialisedDirData: list[os.PathLike] = next(dirData)
