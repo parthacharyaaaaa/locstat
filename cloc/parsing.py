@@ -87,7 +87,7 @@ def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parse_directory_verbose(subdirectoryData, custom_symbols ,file_filter_function, directory_filter_function, True, level+1)
+        op = parse_directory(subdirectoryData, config, custom_symbols ,file_filter_function, directory_filter_function, True, level+1)
 
         localLOC, localTotal = op.pop("general").values()
         outputMapping["loc"] = outputMapping["loc"] + localLOC
@@ -162,7 +162,7 @@ def parse_directory_verbose(directory_data: Iterator[tuple[Any, list[Any], list[
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parse_directory_verbose(subdirectoryData, custom_symbols, file_filter_function, directory_filter_function, True, level+1)
+        op = parse_directory_verbose(subdirectoryData, config, custom_symbols, file_filter_function, directory_filter_function, True, level+1)
 
         localLOC, localTotal = op.pop("general").values()
         outputMapping["general"]["loc"] = outputMapping["general"]["loc"] + localLOC
