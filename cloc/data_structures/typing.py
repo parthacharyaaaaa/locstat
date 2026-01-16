@@ -5,6 +5,6 @@ OutputMapping: TypeAlias = MutableMapping[str, Union[MutableMapping[str, Any], i
 
 class OutputFunction(Protocol):
     def __call__(self,
-                 output_mapping: Mapping[str, Mapping[str, Any]],
+                 output_mapping: OutputMapping,
                  filepath: Union[str, os.PathLike[str]]) -> None:
         ...
