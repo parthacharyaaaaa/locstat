@@ -1,12 +1,13 @@
 import csv
 import os
+import platform
 import sqlite3
 from types import MappingProxyType
-from typing import Any, Final, Mapping, Optional, Union
+from typing import Any, Final, Literal, Mapping, MutableMapping, Optional, Union
 
 import orjson
 
-from cloc.data_structures.typing import OutputFunction
+from cloc.data_structures.typing import OutputFunction, OutputMapping
 
 __all__ = ("dump_std_output",
            "dump_json_output",
@@ -14,33 +15,46 @@ __all__ = ("dump_std_output",
            "dump_csv_output",
            "OUTPUT_MAPPING")
 
-def dump_std_output(output_mapping: Mapping[str, Mapping[str, Any]],
-                    filepath: Union[str, os.PathLike[str]]) -> None:
+def dump_std_output(output_mapping: OutputMapping,
+                    filepath: Union[str, os.PathLike[str], int],
+                    mode: Literal["w+", "a"] = "w+") -> None:
     '''Dump output to a standard text/log file'''
-    with open(filepath, "w+") as file:
+    with open(filepath, mode) as file:
         if not output_mapping.get("general"):
             file.write("\n".join(f"{k} : {v}" for k,v in output_mapping.items()))
             return
         
+        assert isinstance(output_mapping["general"], Mapping)
         metadata: str = "\n".join(f"{k} : {v}" for k,v in output_mapping["general"].items())
         file.write(metadata)
         file.write("\n"+"="*15+"\n")
         output_string: str = ""
         for directory, entries in output_mapping.items():
+            assert isinstance(entries, Mapping)
             output_string = "\n".join(f"\t{k}:LOC: {v['loc']} Total: {v['total_lines']}" for k,v in entries.items())
             file.write(f"{directory}\n{output_string}\n")
 
-def dump_json_output(output_mapping: Mapping[str, Mapping[str, Any]],
-                     filepath: Union[str, os.PathLike[str]]) -> None:
+def dump_json_output(output_mapping: OutputMapping,
+                     filepath: Union[str, os.PathLike[str], int],
+                     mode: Literal["w+", "a"] = "w+") -> None:
     '''Dump output to JSON file, with proper formatting'''
-    with open(os.path.join(os.getcwd(), filepath), "wb+") as output_file:
+    is_file_descriptor: bool = isinstance(filepath, int)
+    if not (is_file_descriptor or os.path.abspath(filepath)):
+        filepath = os.path.join(os.getcwd(), filepath)
+
+    with open(filepath, mode=mode+"b") as output_file:
         output_file.write(orjson.dumps(output_mapping,
                                        option=orjson.OPT_INDENT_2,
                                        default=dict))
 
-def dump_sql_output(output_mapping: Mapping[str, Mapping[str, Any]],
-                    filepath: Union[str, os.PathLike[str]]) -> None:
-    '''Dump output to a SQLite database (.db, .sql)'''
+def dump_sql_output(output_mapping: OutputMapping,
+                    filepath: Union[str, os.PathLike[str], int],
+                    mode: Literal["w+", "a"] = "w+") -> None:
+    '''Dump output to a SQLite database (.db, .sql)''' 
+    if isinstance(filepath, int):
+        if platform.system().lower() == "windows":
+            raise ValueError("Cannot open SQLite3 db file on Windows using file descriptor")
+        filepath = os.readlink("/".join(("proc", "self", "fd", str(filepath))))
     
     db_conn: sqlite3.Connection = sqlite3.connect(filepath, isolation_level="IMMEDIATE")
     db_cursor: sqlite3.Cursor = db_conn.cursor()
@@ -82,11 +96,13 @@ def dump_sql_output(output_mapping: Mapping[str, Mapping[str, Any]],
                 db_conn.execute(f"DELETE FROM {table}")
             db_conn.commit()
 
+            assert isinstance(output_mapping["general"], Mapping)
             db_conn.execute("INSERT INTO general VALUES (?, ?, ?, ?)",
                             (output_mapping['general']["loc"], output_mapping['general']["total"],
                              output_mapping['general']["time"], output_mapping['general']["platform"]))
             
             for directory, fileMapping in output_mapping.items():
+                assert isinstance(fileMapping, Mapping)
                 db_cursor.executemany('''INSERT INTO file_data (directory, _name, LOC, total_lines)
                                       VALUES (?, ?, ?, ?);''',
                                     ([directory, filename, fileData["loc"], fileData["total_lines"]]
@@ -96,11 +112,13 @@ def dump_sql_output(output_mapping: Mapping[str, Mapping[str, Any]],
         db_cursor.close()
         db_conn.close()
 
-def dump_csv_output(output_mapping: Mapping[str, Mapping[str, Any]],
-                    filepath: Union[str, os.PathLike[str]]) -> None:
-    with open(filepath, newline='', mode="w+") as csvFile:
+def dump_csv_output(output_mapping: OutputMapping,
+                    filepath: Union[str, os.PathLike[str], int],
+                    mode: Literal["w+", "a"] = "w+") -> None:
+    with open(filepath, newline='', mode=mode) as csvFile:
         writer = csv.writer(csvFile)
-        general_data: Optional[Mapping[str, Any]] = output_mapping.get("general")
+        assert isinstance(output_mapping["general"], MutableMapping)
+        general_data: Optional[MutableMapping[str, Any]] = output_mapping.get("general")    #type: ignore
 
         if not general_data:
             writer.writerow(output_mapping.keys())
@@ -113,7 +131,9 @@ def dump_csv_output(output_mapping: Mapping[str, Mapping[str, Any]],
             # Write actual, per file data
             writer.writerow(("DIRECTORY", "FILE", "LOC", "TOTAL"))
             writer.writerow(())
-            writer.writerows((dir, filename, fileData["loc"], fileData["total_lines"]) for dir, file in output_mapping.items() for filename, fileData in file.items())
+            writer.writerows((dir, filename, fileData["loc"], fileData["total_lines"])
+                             for dir, file in output_mapping.items()
+                             for filename, fileData in file.items())    # type: ignore
 
 OUTPUT_MAPPING: Final[MappingProxyType[str, OutputFunction]] = MappingProxyType({
     "json" : dump_json_output,

@@ -1,10 +1,11 @@
 import os
-from typing import Any, Mapping, MutableMapping, Protocol, TypeAlias, Union
+from typing import Any, Literal, Mapping, MutableMapping, Protocol, TypeAlias, Union
 
 OutputMapping: TypeAlias = MutableMapping[str, Union[MutableMapping[str, Any], int, str]]
 
 class OutputFunction(Protocol):
     def __call__(self,
                  output_mapping: OutputMapping,
-                 filepath: Union[str, os.PathLike[str]]) -> None:
+                 filepath: Union[str, os.PathLike[str], int],
+                 mode: Literal["w+", "a"] = "w+") -> None:
         ...

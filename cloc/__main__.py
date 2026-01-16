@@ -5,7 +5,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Final, MutableMapping, Optional, Sequence, Union
+from typing import Any, Callable, Final, Literal, MutableMapping, Optional, Sequence, Union
 
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
@@ -126,16 +126,17 @@ def main(line: Sequence[str]) -> int:
     # Emit results
     output_file: Union[int, str] = sys.stdout.fileno()
     output_handler: OutputFunction = dump_std_output
+    mode: Literal["w+", "a"] = "a"
     if args.output:
         output_file = args.output[0].strip().lower()
         assert isinstance(output_file, str)
         output_extension: str = output_file.split(".")[-1]
-
+        mode = "w+"
         # Fetch output function based on file extension, default to standard write logic
         output_handler = OUTPUT_MAPPING.get(output_extension, output_handler)
     
     print("=================== SCAN COMPLETE ====================")
-    output_handler(output_mapping=output_mapping, filepath=args.output[0])
+    output_handler(output_mapping=output_mapping, filepath=output_file, mode=mode)
     return 0
 
 if __name__ == "__main__":
