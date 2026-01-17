@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 import time
+from array import array
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Final, Literal, MutableMapping, Optional, Sequence, Union
@@ -107,7 +108,6 @@ def main(line: Sequence[str]) -> int:
         root: str = os.path.abspath(args.dir)
         root_data = os.walk(root)
 
-        epoch: float = time.time()
         kwargs: dict[str, Any] = {"directory_data" : root_data,
                                   "config" : config,
                                   "custom_symbols" : symbol_data or None,
@@ -116,7 +116,13 @@ def main(line: Sequence[str]) -> int:
                                   "minimum_characters" : args.min_chars,
                                   "recurse" : args.recurse}
         
-        output_mapping = parse_directory_verbose(**kwargs) if args.verbose else parse_directory(**kwargs)
+        epoch: float = time.time()
+        if args.verbose:
+            output_mapping = parse_directory_verbose(**kwargs)
+        else:
+            line_data: array[int] = array("L", (0, 0))
+            parse_directory(**kwargs, line_data=line_data)
+            output_mapping = {"general" : {"total" : line_data[0], "loc" : line_data[1]}}
         
         assert isinstance(output_mapping["general"], MutableMapping)
         output_mapping["general"]["time"] = f"{time.time()-epoch:.3f}s"

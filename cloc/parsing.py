@@ -3,6 +3,7 @@ import os
 from typing import Any, Callable, Iterator, Optional
 from itertools import islice
 import ctypes
+from array import array
 
 from cloc.ctypes_interfacing import lib, BatchScanResult
 from cloc.data_structures.config import ClocConfig
@@ -35,20 +36,14 @@ def parse_file(filepath: str,
 
 def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
                     config: ClocConfig,
+                    line_data: array[int],
                     custom_symbols: Optional[dict] = None,
                     file_filter_function: Callable = lambda _: True,
                     directory_filter_function: Callable = lambda _ : False,
                     minimum_characters: int = 0,
-                    recurse: bool = False,
-                    level: int = 0,
-                    loc: int = 0,
-                    total_lines: int = 0,
-                    outputMapping: Optional[dict] = None) -> OutputMapping:
+                    recurse: bool = False) -> None:
     materialisedDirData: list[os.PathLike] = next(directory_data)
     rootDirectory: os.PathLike = materialisedDirData[0]
-
-    if not outputMapping:
-        outputMapping = {"loc" : 0, "total" : 0}
 
     for file in materialisedDirData[2]:
         # File excluded
@@ -69,14 +64,11 @@ def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
         l, tl = parse_file(os.path.join(rootDirectory, file),
                            singleLine, multiLineStart, multiLineEnd,
                            minimum_characters)
-        total_lines += tl
-        loc += l
+        line_data[0] += tl
+        line_data[1] += l
 
-    outputMapping["loc"] = loc
-    outputMapping["total"] = total_lines
-    
     if not recurse:
-        return outputMapping
+        return
 
     # All files have been parsed in this directory, recurse
     for dir in materialisedDirData[1]:
@@ -84,15 +76,11 @@ def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parse_directory(subdirectoryData, config, custom_symbols ,file_filter_function, directory_filter_function,minimum_characters, True, level+1)
-
-        localLOC, localTotal = op["loc"], op["total"]
-        assert isinstance(localLOC, int) and isinstance(localTotal, int)
-        outputMapping["loc"] = outputMapping["loc"] + localLOC
-        outputMapping["total"] = outputMapping["total"] + localTotal
-        outputMapping.update(op)
-
-    return outputMapping
+        parse_directory(subdirectoryData, config, line_data,
+                        custom_symbols,
+                        file_filter_function, directory_filter_function,
+                        minimum_characters,
+                        True)
 
 def parse_directory_verbose(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
                             config: ClocConfig,
