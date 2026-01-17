@@ -4,6 +4,8 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Optional, Union
 
+from cloc.data_structures.typing import LanguageMetadata
+
 from .singleton import SingletonMeta
 from .exceptions import InvalidConfigurationException
 
@@ -22,8 +24,8 @@ class ClocConfig(metaclass=SingletonMeta):
     minimum_characters: int = 0
 
     # Language metadata
-    language_metadata: MappingProxyType[str, MappingProxyType[str, str]]
-    ignored_languages: frozenset[str]
+    symbol_mapping: MappingProxyType[str, LanguageMetadata]
+    ignored_languages: set[str]
 
     additional_kwargs: dict[str, Any] = field(default_factory = dict)
 
@@ -66,37 +68,20 @@ class ClocConfig(metaclass=SingletonMeta):
         # Load data about comment symbols
         with open(working_directory / "languages.json", "rb") as langauges_source:
             languages_data = orjson.loads(langauges_source.read())
-        
-        languages: MappingProxyType[str, MappingProxyType[str, str]] = MappingProxyType(
-            {"symbols" : languages_data.pop("symbols"),
-                "multilined" : languages_data.pop("multilined")}
-        )
-        object.__setattr__(instance, "language_metadata", languages)
-        object.__setattr__(instance, "ignored_languages", frozenset(languages_data.pop("ignore")))
-        return instance
-    
-    def find_comment_symbol(self,
-                            extension: str
-                            ) -> Union[bytes, tuple[bytes, bytes], tuple[bytes, tuple[bytes, bytes]]]:
-        extension = extension.strip(". ").lower()
-        
-        singleline_symbol: Optional[str] = self.language_metadata["symbols"].get(extension)
-        multiline_symbols: Optional[str] = self.language_metadata["multilined"].get(extension)
-        multiline_symbol_pair: Optional[list[str]] = None
 
-        if not (singleline_symbol or multiline_symbols):
-            raise ValueError(f"No comment symbols found for extension .{extension}")
+        object.__setattr__(instance, "ignored_languages", set(languages_data.pop("ignore")))
         
-        if multiline_symbols:
-            multiline_symbol_pair = multiline_symbols.split()
-            if not len(multiline_symbol_pair) == 2:
-                raise ValueError(f"Invalid syntax for multiline comments for extension: .{extension}")
-        
-        if not singleline_symbol:
-            assert multiline_symbol_pair
-            return multiline_symbol_pair[0].encode(), multiline_symbol_pair[1].encode()
-        if not multiline_symbol_pair:
-            return singleline_symbol.encode()
-        
-        return (singleline_symbol.encode(),
-                (multiline_symbol_pair[0].encode(), multiline_symbol_pair[1].encode()))
+        comments_data: dict[str, list[str]] = languages_data.pop("comments")
+        symbol_mapping: dict[str, LanguageMetadata] = {}
+        for language, comment_data in comments_data.items():
+            if len(comment_data) != 3:
+                raise InvalidConfigurationException(" ".join((f"Comment data for file extension {language} malformed",
+                                                              "Should be of format:",
+                                                              "(singleline, multiline-start, multiline-end)",
+                                                              f"got {comment_data} instead")))
+            singleline, multistart, multiend = comment_data
+            symbol_mapping[language] = (singleline.encode() if singleline else None,
+                                        multistart.encode() if multistart else None,
+                                        multiend.encode() if multiend else None)
+        object.__setattr__(instance, "symbol_mapping", symbol_mapping)
+        return instance
