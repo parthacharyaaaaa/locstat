@@ -54,24 +54,21 @@ def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
         # File excluded
         if not file_filter_function(file):
             continue
-        
-        singleLine, multiLineStart, multiLineEnd = None, None, None
-        if not custom_symbols:
-            symbolData = config.find_comment_symbol(file.split(".")[-1])  
 
-            if isinstance(symbolData, bytes):
-                singleLine = symbolData
-            elif isinstance(symbolData[1], bytes):
-                multiLineStart, multiLineEnd = symbolData
-            else:
-                singleLine, (multiLineStart, multiLineEnd) = symbolData
-        else:
-            # Custom symbols given
-            singleLine = custom_symbols.get("single")
-            multiLineStart = custom_symbols.get("multistart")
-            multiLineEnd = custom_symbols.get("multiend")
+        extension: str = file.split(".")[-1]
+        if extension in config.ignored_languages:
+            continue
 
-        l, tl = parse_file(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
+        singleLine, multiLineStart, multiLineEnd = (config.symbol_mapping.get(extension, (None, None, None))
+                                                    if not custom_symbols
+                                                    else (custom_symbols.get("single"),
+                                                          custom_symbols.get("multistart"),
+                                                          custom_symbols.get("multiend")))
+
+
+        l, tl = parse_file(os.path.join(rootDirectory, file),
+                           singleLine, multiLineStart, multiLineEnd,
+                           minimum_characters)
         total_lines += tl
         loc += l
 
@@ -87,9 +84,10 @@ def parse_directory(directory_data: Iterator[tuple[Any, list[Any], list[Any]]],
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parse_directory(subdirectoryData, config, custom_symbols ,file_filter_function, directory_filter_function, True, level+1)
+        op = parse_directory(subdirectoryData, config, custom_symbols ,file_filter_function, directory_filter_function,minimum_characters, True, level+1)
 
-        localLOC, localTotal = op.pop("general").values()
+        localLOC, localTotal = op["loc"], op["total"]
+        assert isinstance(localLOC, int) and isinstance(localTotal, int)
         outputMapping["loc"] = outputMapping["loc"] + localLOC
         outputMapping["total"] = outputMapping["total"] + localTotal
         outputMapping.update(op)
@@ -128,22 +126,18 @@ def parse_directory_verbose(directory_data: Iterator[tuple[Any, list[Any], list[
         # File excluded
         if not file_filter_function(file):
             continue
-        singleLine, multiLineStart, multiLineEnd = None, None, None
-        if not custom_symbols:
-            symbolData = config.find_comment_symbol(file.split(".")[-1])  
-            if isinstance(symbolData, bytes):
-                singleLine = symbolData
-            elif isinstance(symbolData[1], bytes):
-                multiLineStart, multiLineEnd = symbolData
-            else:
-                singleLine, (multiLineStart, multiLineEnd) = symbolData
-        else:
-            # Custom symbols given
-            singleLine = custom_symbols.get("single")
-            multiLineStart = custom_symbols.get("multistart")
-            multiLineEnd = custom_symbols.get("multiend")
 
-        l, tl = parse_file(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd)
+        extension: str = file.split(".")[-1]
+        if extension in config.ignored_languages:
+            continue
+
+        singleLine, multiLineStart, multiLineEnd = (config.symbol_mapping.get(extension, (None, None, None))
+                                                    if not custom_symbols
+                                                    else (custom_symbols.get("single"),
+                                                          custom_symbols.get("multistart"),
+                                                          custom_symbols.get("multiend")))
+
+        l, tl = parse_file(os.path.join(rootDirectory, file), singleLine, multiLineStart, multiLineEnd, minimum_characters)
         total_lines += tl
         loc += l
         if not outputMapping.get(rootDirectory):
@@ -158,11 +152,10 @@ def parse_directory_verbose(directory_data: Iterator[tuple[Any, list[Any], list[
     # All files have been parsed in this directory, recurse
     for dir in materialisedDirData[1]:
         if not directory_filter_function(dir):
-            print("Skipping directory:", dir)
             continue
         # Walk over and parse subdirectory
         subdirectoryData = os.walk(os.path.join(rootDirectory, dir))
-        op = parse_directory_verbose(subdirectoryData, config, custom_symbols, file_filter_function, directory_filter_function, True, level+1)
+        op = parse_directory_verbose(subdirectoryData, config, custom_symbols, file_filter_function, directory_filter_function, minimum_characters, True, level+1)
 
         localLOC, localTotal = op.pop("general").values()
         outputMapping["general"]["loc"] = outputMapping["general"]["loc"] + localLOC
