@@ -1,4 +1,4 @@
 [defaults]
 recurse=false
-verbose=true
+verbose=false
 minimum_characters=0
