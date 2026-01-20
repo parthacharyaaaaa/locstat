@@ -1,8 +1,9 @@
-from typing import Callable
+from typing import Callable, Sequence
 
 from cloc.data_structures.typing import SupportsMembershipChecks
 
-__all__ = ("construct_file_filter",)
+__all__ = ("construct_file_filter",
+           "construct_directory_filter")
 
 def construct_file_filter(extension_set: SupportsMembershipChecks[str],
                           file_set: SupportsMembershipChecks[str],
@@ -31,3 +32,12 @@ def construct_file_filter(extension_set: SupportsMembershipChecks[str],
             file_filter = lambda file : file not in file_set
     
     return file_filter
+
+def construct_directory_filter(directories: SupportsMembershipChecks[str],
+                               exclude: bool = False,
+                               include: bool = False) -> Callable[[str], bool]:
+    if exclude:
+        return lambda directory : directory not in directories
+    elif include:
+        return lambda directory : directory in directories
+    return lambda directory : True
