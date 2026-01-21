@@ -13,36 +13,96 @@ static PyObject *_parse_memoryview(PyObject *self, PyObject *args){
     minimum_characters;
 
     if (!PyArg_ParseTuple(args,
-        "w*y#y#y#n",
+        "y*z#z#z#n",
         &mapped_buffer,
         &singleline_character, &singleline_length,
         &multiline_start_character, &multiline_start_length,
         &multiline_end_character, &multiline_end_length,
         &minimum_characters)){
-            PyBuffer_Release(&mapped_buffer);
             return NULL;
     }
 
-    bool commented_block = false;
-    int total_lines = 0, loc = 0, valid_chars = 0;
+    bool commented_block = false, singleline_comment = false;
+    int multiline_start_pointer = 0, multiline_end_pointer = 0,
+    singleline_pointer = 0;
+    int total_lines = 0, loc = 0, valid_symbols = 0;
 
-    // Parsing logic here >:3
-    const char *view = (const char *) mapped_buffer.buf;
-    for (Py_ssize_t i = 0; i < mapped_buffer.len; i++){
+    const unsigned char *view = (const unsigned char *) mapped_buffer.buf;
+    Py_ssize_t i = 0;
+    for (;i < mapped_buffer.len; i++){
+        if (view[i] & 0b10000000){
+            multiline_start_pointer = 0;
+            multiline_end_pointer = 0;
+            singleline_pointer = 0;
+            continue;
+        }
+
+        // Substring matching to determine parsing states
+        if (!commented_block){
+            if (multiline_start_character
+                && view[i] == multiline_start_character[multiline_start_pointer]){
+                multiline_start_pointer++;
+                if (multiline_start_pointer == multiline_start_length){
+                    commented_block = true;
+                    multiline_start_pointer = 0;
+                }
+                continue;
+            }
+            else if (view[i] == singleline_character[singleline_pointer]){
+                singleline_pointer++;
+                if (singleline_pointer == singleline_length){
+                    singleline_comment = true;
+                    singleline_pointer = 0;
+                }
+                continue;
+            }
+        }
+
+        else if (commented_block
+            && multiline_start_character
+            && view[i] == multiline_end_character[multiline_end_pointer]){
+                multiline_end_pointer++;
+                if (multiline_end_pointer == multiline_end_length){
+                    commented_block = false;
+                    multiline_end_pointer = 0;
+                }
+                continue;
+        }
+
+        if (!(commented_block || singleline_comment)){valid_symbols++;}
+
+        multiline_start_pointer = 0;
+        multiline_end_pointer = 0;
+        singleline_pointer = 0;
         
+        if (view[i] == '\n'){
+            total_lines++;
+            if (valid_symbols > minimum_characters){
+                loc++;
+            }
+            valid_symbols = 0;
+            singleline_comment = false;
+        }
     }
-
+    // Files not terminating with newline
+    if (view[i] != '\n'){
+        total_lines++;
+        if (valid_symbols >= minimum_characters){
+            loc++;
+        }
+    }
     PyBuffer_Release(&mapped_buffer);
 
     return Py_BuildValue("ii", total_lines, loc);
 }
 
+PyDoc_STRVAR(_parse_memoryview_doc, "Parse a UTF-8 byte stream to count total lines and lines of code (LOC)");
 static PyMethodDef methods[] = {
     {
         .ml_name = "_parse_memoryview",
-        .ml_doc = "Parse a UTF-8 byte stream to count total lines and lines of code (LOC)",
+        .ml_doc = _parse_memoryview_doc,
         .ml_flags = METH_VARARGS,
-        .ml_meth = _parse_memoryview
+        .ml_meth = _parse_memoryview,
     },
     {NULL, NULL, 0, NULL}
 };
@@ -50,7 +110,7 @@ static PyMethodDef methods[] = {
 PyDoc_STRVAR(module_doc, "Internal module for parsing files");
 static PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "parse_file",
+    .m_name = "_parse_file",
     .m_doc = module_doc,
     .m_size = -1,
     .m_methods = methods
