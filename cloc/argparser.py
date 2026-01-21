@@ -16,7 +16,7 @@ def _validate_directory(arg: str) -> str:
 def _validate_filepath(arg: str) -> str:
     arg = arg.strip()
     if not os.path.isfile(arg):
-        raise NotADirectoryError(f"File {arg} could not be found")
+        raise FileNotFoundError(f"File {arg} could not be found")
     return arg
 
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
