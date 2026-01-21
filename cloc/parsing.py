@@ -1,38 +1,24 @@
 '''Module to hold all parsing logic, at both file and directory levels'''
 import os
+import mmap
 from typing import Any, Callable, Iterator, Optional
-from itertools import islice
-import ctypes
 from array import array
 
-from cloc.ctypes_interfacing import lib, BatchScanResult
 from cloc.data_structures.config import ClocConfig
-from cloc.data_structures.typing import OutputMapping
+from cloc._parsing import _parse_memoryview
 
 def parse_file(filepath: str,
-               singleline_symbol: Optional[bytes] = None,
-               multiline_start_symbol: Optional[bytes] = None,
-               multiline_end_symbol: Optional[bytes] = None,
-               minimum_characters: int = 0) -> tuple[int, int]:
-    loc: int = 0
-    total: int = 0
-    singleline_symbol_length: int = 0 if not singleline_symbol else len(singleline_symbol)
-    multiline_start_symbol_length: int = 0 if not multiline_start_symbol else len(multiline_start_symbol)
-    multiline_end_symbol_length: int = 0 if not multiline_end_symbol else len(multiline_end_symbol)
-
+                singleline_symbol: Optional[bytes] = None,
+                multiline_start_symbol: Optional[bytes] = None,
+                multiline_end_symbol: Optional[bytes] = None,
+                minimum_characters: int = 0):
     with open(filepath, 'rb') as file:
-        commentedBlock: bool = False            # Multiple multilineStarts will still have the same effect as one, so a single flag is enough
-
-        while batch := list(islice(file, 100)):
-            batchSize = len(batch)
-            
-            batchScanResult: BatchScanResult = lib.scanBatch((ctypes.c_char_p * batchSize)(*batch), batchSize, commentedBlock, minimum_characters, singleline_symbol, singleline_symbol_length, multiline_start_symbol, multiline_start_symbol_length, multiline_end_symbol, multiline_end_symbol_length)
-
-            loc += batchScanResult.validLines
-            total += batchSize
-
-            commentedBlock = batchScanResult.commentedBlock
-        return loc, total
+        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mapped_file:
+            return _parse_memoryview(memoryview(mapped_file),
+                                    singleline_symbol,
+                                    multiline_start_symbol,
+                                    multiline_end_symbol,
+                                    minimum_characters)
 
 def parse_directory(
         directory_data: Iterator[os.DirEntry[str]],
