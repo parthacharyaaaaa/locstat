@@ -110,13 +110,13 @@ static PyMethodDef methods[] = {
 PyDoc_STRVAR(module_doc, "Internal module for parsing files");
 static PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_parse_file",
+    .m_name = "_parsing",
     .m_doc = module_doc,
     .m_size = -1,
     .m_methods = methods
 };
 
 PyMODINIT_FUNC
-PyInit__parse_file(void){
+PyInit__parsing(void){
     return PyModule_Create(&module);
 }
