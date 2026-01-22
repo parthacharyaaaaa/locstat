@@ -19,6 +19,12 @@ def _validate_filepath(arg: str) -> str:
         raise FileNotFoundError(f"File {arg} could not be found")
     return arg
 
+def _validate_min_chars(arg: str) -> int:
+    min_chars: int = int(arg)
+    if min_chars < 0:
+        raise ValueError("Minimum characters cannot be negative")
+    return min_chars
+
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     '''Instantiate and return an argument parser
 
@@ -46,8 +52,7 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
 
     # Parsing logic manipulation
     parser.add_argument("-mc", "--min-chars",
-                        nargs=1,
-                        type=int,
+                        type=_validate_min_chars,
                         help=" ".join(("Specify the minimum number of non-whitespace characters a line",
                                     "should have to be considered an LOC")),
                         default=config.minimum_characters)
