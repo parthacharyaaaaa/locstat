@@ -11,9 +11,14 @@ def parse_file(filepath: str,
                 singleline_symbol: Optional[bytes] = None,
                 multiline_start_symbol: Optional[bytes] = None,
                 multiline_end_symbol: Optional[bytes] = None,
-                minimum_characters: int = 0):
+                minimum_characters: int = 0) -> tuple[int, int]:
     with open(filepath, 'rb') as file:
-        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mapped_file:
+        try:
+            mapped_file = mmap.mmap(file.fileno(), 0, flags=mmap.MAP_PRIVATE)
+            mapped_file.madvise(mmap.MADV_SEQUENTIAL)
+        except ValueError:
+            return 0, 0
+        with mapped_file:
             return _parse_memoryview(memoryview(mapped_file),
                                     singleline_symbol,
                                     multiline_start_symbol,
@@ -66,7 +71,7 @@ def parse_directory(
                 continue
 
             singleLine, multiLineStart, multiLineEnd = config.symbol_mapping.get(extension, (None, None, None))
-            l, tl = parse_file(dir_entry.path,
+            tl, l = parse_file(dir_entry.path,
                             singleLine, multiLineStart, multiLineEnd,
                             minimum_characters)
             line_data[0] += tl
