@@ -58,7 +58,6 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                         default=config.minimum_characters)
 
     parser.add_argument("-ss", "--single-symbol",
-                        nargs=1,
                         help=" ".join(("Specify the single-line comment symbol.",
                                     "By default, the comments are identified via file extension itself,",
                                     "Note that if this flag is specified with the directory flag,",
@@ -66,7 +65,6 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                                     "checked against this comment symbol")))
 
     parser.add_argument("-ms", "--multiline-symbol",
-                        nargs=1,
                         help=" ".join(("Specify the multi-line comment symbols as a",
                                     "space-separated pair of opening and closing symbols.",
                                     "Behaves similiar to single-line comments")))
@@ -114,7 +112,6 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                         default=config.verbose)
 
     parser.add_argument("-o", "--output",
-                        nargs=1,
                         help=" ".join(("Specify output file to dump counts into.",
                                     "If not specified, output is dumped to stdout.",
                                     "If output file is in",

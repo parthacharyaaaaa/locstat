@@ -28,9 +28,9 @@ def main(line: Sequence[str]) -> int:
 
     # Symbols provided through the command line, consult languages metadata
     if args.single_symbol:
-        singleline_symbol = args.single_symbol[0].strip().encode()
+        singleline_symbol = args.single_symbol.strip().encode()
     if args.multiline_symbol:
-        pairing = args.multiline_symbol[0].strip().split(" ")
+        pairing = args.multiline_symbol.strip().split(" ")
         if len(pairing) != 2:
             raise ValueError(" ".join((f"Multiline symbols {args.multiline_symbol[0]} must",
                                         "be space-separated pair, such as '/* */'")))
@@ -105,9 +105,7 @@ def main(line: Sequence[str]) -> int:
     output_handler: OutputFunction = dump_std_output
     mode: Literal["w+", "a"] = "a"
     if args.output:
-        output_file = args.output[0].strip().lower()
-        assert isinstance(output_file, str)
-        output_extension: str = output_file.split(".")[-1]
+        output_extension: str = args.output.split(".")[-1]
         mode = "w+"
         # Fetch output function based on file extension, default to standard write logic
         output_handler = OUTPUT_MAPPING.get(output_extension, output_handler)
