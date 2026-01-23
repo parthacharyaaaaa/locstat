@@ -3,6 +3,7 @@ from array import array
 from typing import Any, Callable, Iterator, Optional
 
 from cloc.data_structures.config import ClocConfig
+from cloc.data_structures.typing import FileParsingFunction
 from cloc.parsing.file import parse_file
 
 __all__ = ("parse_directory",
@@ -12,6 +13,7 @@ def parse_directory(
         directory_data: Iterator[os.DirEntry[str]],
         config: ClocConfig,
         line_data: array[int],
+        file_parsing_function: FileParsingFunction,
         file_filter_function: Callable = lambda _: True,
         directory_filter_function: Callable = lambda _ : False,
         minimum_characters: int = 0,
@@ -27,6 +29,9 @@ def parse_directory(
 
     :param line_data: 2-element integer sequence to store total lines and LOC
     :type line_data: array.array
+
+    :param file_parsing_function: Parsing function called for each file
+    :type config: FileParsingFunction
 
     :param file_filter_function: Filter function to include/exclude files
     :type file_filter_function: Callable
@@ -54,9 +59,9 @@ def parse_directory(
                 continue
 
             singleLine, multiLineStart, multiLineEnd = config.symbol_mapping.get(extension, (None, None, None))
-            tl, l = parse_file(dir_entry.path,
-                            singleLine, multiLineStart, multiLineEnd,
-                            minimum_characters)
+            tl, l = file_parsing_function(dir_entry.path,
+                                          singleLine, multiLineStart, multiLineEnd,
+                                          minimum_characters)
             line_data[0] += tl
             line_data[1] += l
             continue
@@ -65,13 +70,14 @@ def parse_directory(
             return
         
         parse_directory(os.scandir(dir_entry.path), config, line_data,
-                        file_filter_function, directory_filter_function,
+                        file_parsing_function, file_filter_function, directory_filter_function,
                         minimum_characters,
                         True)
 
 def parse_directory_verbose(
     directory_data: Iterator[os.DirEntry[str]],
     config: ClocConfig,
+    file_parsing_function: FileParsingFunction,
     file_filter_function: Callable = lambda _: True,
     directory_filter_function: Callable = lambda _: False,
     minimum_characters: int = 0,
@@ -86,6 +92,8 @@ def parse_directory_verbose(
     :type directory_data: Iterator[os.DirEntry[str]]
     :param config: Caller's configuration instance
     :type config: ClocConfig
+    :param file_parsing_function: Parsing function called for each file
+    :type config: FileParsingFunction
     :param file_filter_function: Filter function to include/exclude files
     :type file_filter_function: Callable
     :param directory_filter_function: Filter function to exclude/include directories
@@ -121,7 +129,7 @@ def parse_directory_verbose(
                 extension, (None, None, None)
             )
 
-            file_loc, file_total = parse_file(
+            file_loc, file_total = file_parsing_function(
                 dir_entry.path,
                 single,
                 multi_start,
@@ -144,6 +152,7 @@ def parse_directory_verbose(
                 child = parse_directory_verbose(
                     directory_iterator,
                     config,
+                    file_parsing_function,
                     file_filter_function,
                     directory_filter_function,
                     minimum_characters,

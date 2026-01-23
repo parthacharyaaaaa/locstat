@@ -21,6 +21,7 @@ class ClocConfig(metaclass=SingletonMeta):
     # CLI Options
     recurse: bool = False
     verbose: bool = True
+    no_mmap: bool = False
     minimum_characters: int = 0
 
     # Language metadata

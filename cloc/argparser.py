@@ -117,6 +117,15 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                                     "If output file is in",
                                     f"{', '.join(k for k,v in OUTPUT_MAPPING.items() if v != dump_std_output)}",
                                     "then output is formatted differently.")))
+    
+    parser.add_argument("-nm", "--no-mmap",
+                        action="store_true",
+                        default=config.no_mmap,
+                        help=" ".join(("Override default file reading behaviour",
+                                       "and always perform buffered, disk-based reads",
+                                       "on all files.",
+                                       "Useful for preventing SIGBUS.",
+                                       "NOTE: Flag may default to true on Windows")),)
 
     return parser
 

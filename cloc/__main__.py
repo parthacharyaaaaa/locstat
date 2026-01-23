@@ -10,9 +10,9 @@ from typing import Any, Callable, Final, Literal, Optional, Sequence, Union
 
 from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
-from cloc.data_structures.typing import OutputMapping
+from cloc.data_structures.typing import FileParsingFunction, OutputMapping
 from cloc.parsing.directory import parse_directory, parse_directory_verbose
-from cloc.parsing.file import parse_file
+from cloc.parsing.file import parse_file, parse_buffered_file
 from cloc.utilities.core import construct_file_filter
 from cloc.utilities.presentation import OUTPUT_MAPPING, OutputFunction, dump_std_output
 
@@ -39,17 +39,18 @@ def main(line: Sequence[str]) -> int:
         multiline_start_symbol = pairing[0].encode()
         multiline_end_symbol = pairing[1].encode()
     
+    file_parser_function: Final[FileParsingFunction] = parse_buffered_file if args.no_mmap else parse_file
     # Single file, no need to check and validate other default values
     if args.file:
         if not(args.single_symbol and args.multilline_symbol):
             singleline_symbol, multiline_start_symbol, multiline_end_symbol = config.symbol_mapping.get(args.file.rsplit(".", 1)[-1],
                                                                                                         (None, None, None))
         epoch: float = time.time()
-        total, loc = parse_file(filepath=args.file, 
-                                singleline_symbol=singleline_symbol, 
-                                multiline_start_symbol=multiline_start_symbol, 
-                                multiline_end_symbol=multiline_end_symbol, 
-                                minimum_characters=args.min_chars)
+        total, loc = file_parser_function(filepath=args.file, 
+                                          singleline_symbol=singleline_symbol, 
+                                          multiline_start_symbol=multiline_start_symbol, 
+                                          multiline_end_symbol=multiline_end_symbol, 
+                                          minimum_characters=args.min_chars)
         
         output_mapping = {"loc" : loc,
                           "total" : total,
@@ -80,6 +81,7 @@ def main(line: Sequence[str]) -> int:
 
         kwargs: dict[str, Any] = {"directory_data" : os.scandir(os.path.abspath(args.dir)),
                                   "config" : config,
+                                  "file_parsing_function" : file_parser_function,
                                   "file_filter_function" : file_filter,
                                   "directory_filter_function" : directory_filter,
                                   "minimum_characters" : args.min_chars,
