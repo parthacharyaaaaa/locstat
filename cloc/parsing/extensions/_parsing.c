@@ -216,8 +216,131 @@ static PyObject *_parse_file(PyObject *self, PyObject *args){
     return Py_BuildValue("ii", total_lines, loc);
 }
 
+static PyObject *
+_parse_file_no_chunk(PyObject *self, PyObject *args){
+    const char *filename,
+    *singleline_character,
+    *multiline_start_character, *multiline_end_character;
+    
+    Py_ssize_t singleline_length,
+    multiline_start_length,
+    multiline_end_length,
+    minimum_characters;
+
+    if (!PyArg_ParseTuple(args,
+        "sz#z#z#n",
+        &filename,
+        &singleline_character, &singleline_length,
+        &multiline_start_character, &multiline_start_length,
+        &multiline_end_character, &multiline_end_length,
+        &minimum_characters)){
+            return NULL;
+    }
+
+    FILE *file = fopen(filename, "rb");
+    if (!file){
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long filelength = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    unsigned char * buffer = malloc(filelength);
+    if (!buffer){
+        PyErr_Format(PyExc_MemoryError,
+            "Failed to open file %s of size %d bytes",
+            filename, filelength);
+        return NULL;
+    }
+    fread(buffer, 1, filelength, file);
+    
+    bool commented_block = false, singleline_comment = false;
+    int multiline_start_pointer = 0, multiline_end_pointer = 0,
+    singleline_pointer = 0;
+    int total_lines = 0, loc = 0, valid_symbols = 0;
+    Py_ssize_t i;
+
+    for (i = 0; i < filelength; i++){
+        if (buffer[i] & 0b10000000){
+            multiline_start_pointer = 0;
+            multiline_end_pointer = 0;
+            singleline_pointer = 0;
+            continue;
+        }
+        else if (_is_ignorable(buffer[i])){
+            multiline_start_pointer = 0;
+            multiline_end_pointer = 0;
+            singleline_pointer = 0;
+            continue;
+        }
+
+        // Substring matching to determine parsing states
+        if (!commented_block){
+            if (multiline_start_character
+                && buffer[i] == multiline_start_character[multiline_start_pointer]){
+                multiline_start_pointer++;
+                if (multiline_start_pointer == multiline_start_length){
+                    commented_block = true;
+                    multiline_start_pointer = 0;
+                }
+                continue;
+            }
+            else if (singleline_character
+                && buffer[i] == singleline_character[singleline_pointer]){
+                singleline_pointer++;
+                if (singleline_pointer == singleline_length){
+                    singleline_comment = true;
+                    singleline_pointer = 0;
+                    for (;i < filelength && buffer[i] != '\n'; i++);
+                }
+                continue;
+            }
+        }
+
+        else if (commented_block
+            && multiline_start_character
+            && buffer[i] == multiline_end_character[multiline_end_pointer]){
+                multiline_end_pointer++;
+                if (multiline_end_pointer == multiline_end_length){
+                    commented_block = false;
+                    multiline_end_pointer = 0;
+                }
+                continue;
+        }
+
+        valid_symbols += !(commented_block || singleline_comment);
+
+        multiline_start_pointer = 0;
+        multiline_end_pointer = 0;
+        singleline_pointer = 0;
+        
+        if (buffer[i] == '\n'){
+            total_lines++;
+            if (valid_symbols > minimum_characters){
+                loc++;
+            }
+            valid_symbols = 0;
+            singleline_comment = false;
+        }
+    }
+    // Files not terminating with newline
+    if (buffer[i-1] != '\n'){
+        total_lines++;
+        if (valid_symbols > minimum_characters){
+            loc++;
+        }
+    }
+    fclose(file);
+    return Py_BuildValue("ii", total_lines, loc);
+}
+
 PyDoc_STRVAR(_parse_complete_buffer_doc, "Parse a UTF-8 byte stream to count total lines and lines of code (LOC)");
 PyDoc_STRVAR(_parse_file_doc, "Parse a UTF-8 encoded file to count total lines and lines of code (LOC)");
+PyDoc_STRVAR(_parse_file_no_chunk_doc,
+    "Parse a UTF-8 encoded file to count total lines and lines of code (LOC), reading the entire file at once");
+
 static PyMethodDef methods[] = {
     {
         .ml_name = "_parse_complete_buffer",
@@ -230,6 +353,12 @@ static PyMethodDef methods[] = {
         .ml_doc = _parse_file_doc,
         .ml_flags = METH_VARARGS,
         .ml_meth = _parse_file,
+    },
+    {
+        .ml_name = "_parse_file_no_chunk",
+        .ml_doc = _parse_file_no_chunk_doc,
+        .ml_flags = METH_VARARGS,
+        .ml_meth = _parse_file_no_chunk,
     },
     {NULL, NULL, 0, NULL}
 };
