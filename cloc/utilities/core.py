@@ -1,9 +1,12 @@
-from typing import Callable, Sequence
+from typing import Callable, Literal
 
-from cloc.data_structures.typing import SupportsMembershipChecks
+from cloc.data_structures.parse_modes import ParseMode
+from cloc.data_structures.typing import SupportsMembershipChecks, FileParsingFunction
+from cloc.parsing.file import parse_file_mmap, parse_buffered_file, parse_complete_buffer
 
 __all__ = ("construct_file_filter",
-           "construct_directory_filter")
+           "construct_directory_filter",
+           "derive_file_parser")
 
 def construct_file_filter(extension_set: SupportsMembershipChecks[str],
                           file_set: SupportsMembershipChecks[str],
@@ -41,3 +44,11 @@ def construct_directory_filter(directories: SupportsMembershipChecks[str],
     elif include:
         return lambda directory : directory in directories
     return lambda directory : True
+
+def derive_file_parser(option: ParseMode) -> FileParsingFunction:
+    if option == ParseMode.MMAP:
+        return parse_file_mmap
+    elif option == ParseMode.COMPLETE:
+        return parse_complete_buffer
+    return parse_buffered_file
+    

@@ -3,6 +3,7 @@ import os
 from typing import Final, Sequence
 
 from cloc.data_structures.config import ClocConfig
+from cloc.data_structures.parse_modes import ParseMode
 from cloc.utilities.presentation import OUTPUT_MAPPING, dump_std_output
 
 __all__ = ("initialize_parser", "parse_arguments")
@@ -24,6 +25,12 @@ def _validate_min_chars(arg: str) -> int:
     if min_chars < 0:
         raise ValueError("Minimum characters cannot be negative")
     return min_chars
+
+def _validate_parsing_mode(arg: str) -> ParseMode:
+    try:
+        return ParseMode(arg.strip().upper())
+    except ValueError:
+        raise ValueError(f"Supported parsing modes: {", ".join((k for k in ParseMode._value2member_map_.keys()))}")
 
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     '''Instantiate and return an argument parser
@@ -118,14 +125,12 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                                     f"{', '.join(k for k,v in OUTPUT_MAPPING.items() if v != dump_std_output)}",
                                     "then output is formatted differently.")))
     
-    parser.add_argument("-nm", "--no-mmap",
-                        action="store_true",
-                        default=config.no_mmap,
-                        help=" ".join(("Override default file reading behaviour",
-                                       "and always perform buffered, disk-based reads",
-                                       "on all files.",
-                                       "Useful for preventing SIGBUS.",
-                                       "NOTE: Flag may default to true on Windows")),)
+    parser.add_argument("-pm", "--parsing-mode",
+                        type=_validate_parsing_mode,
+                        default=ParseMode.BUFFERED,
+                        help=" ".join(("Override default file parsing behaviour.",
+                                       "Available options:",
+                                       ', '.join(ParseMode._value2member_map_.keys()))),)
 
     return parser
 

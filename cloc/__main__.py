@@ -12,8 +12,7 @@ from cloc.argparser import initialize_parser, parse_arguments
 from cloc.data_structures.config import ClocConfig
 from cloc.data_structures.typing import FileParsingFunction, OutputMapping
 from cloc.parsing.directory import parse_directory, parse_directory_verbose
-from cloc.parsing.file import parse_file, parse_buffered_file
-from cloc.utilities.core import construct_file_filter
+from cloc.utilities.core import construct_file_filter, derive_file_parser
 from cloc.utilities.presentation import OUTPUT_MAPPING, OutputFunction, dump_std_output
 
 def main(line: Sequence[str]) -> int:
@@ -39,7 +38,7 @@ def main(line: Sequence[str]) -> int:
         multiline_start_symbol = pairing[0].encode()
         multiline_end_symbol = pairing[1].encode()
     
-    file_parser_function: Final[FileParsingFunction] = parse_buffered_file if args.no_mmap else parse_file
+    file_parser_function: Final[FileParsingFunction] = derive_file_parser(args.parsing_mode)
     # Single file, no need to check and validate other default values
     if args.file:
         if not(args.single_symbol and args.multilline_symbol):
