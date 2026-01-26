@@ -2,7 +2,9 @@ from typing import Callable, Literal
 
 from cloc.data_structures.parse_modes import ParseMode
 from cloc.data_structures.typing import SupportsMembershipChecks, FileParsingFunction
-from cloc.parsing.file import parse_file_mmap, parse_buffered_file, parse_complete_buffer
+from cloc.parsing.extensions._parsing import (_parse_file_vm_map,
+                                              _parse_file,
+                                              _parse_file_no_chunk)
 
 __all__ = ("construct_file_filter",
            "construct_directory_filter",
@@ -47,8 +49,8 @@ def construct_directory_filter(directories: SupportsMembershipChecks[str],
 
 def derive_file_parser(option: ParseMode) -> FileParsingFunction:
     if option == ParseMode.MMAP:
-        return parse_file_mmap
+        return _parse_file_vm_map
     elif option == ParseMode.COMPLETE:
-        return parse_complete_buffer
-    return parse_buffered_file
+        return _parse_file_no_chunk
+    return _parse_file
     
