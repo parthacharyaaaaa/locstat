@@ -12,11 +12,11 @@ def parse_directory(
         directory_data: Iterator[os.DirEntry[str]],
         config: ClocConfig,
         line_data: array[int],
+        depth: int,
         file_parsing_function: FileParsingFunction,
         file_filter_function: Callable = lambda _: True,
         directory_filter_function: Callable = lambda _ : False,
-        minimum_characters: int = 0,
-        recurse: bool = False) -> None:
+        minimum_characters: int = 0) -> None:
     '''
     Parse directory and calculate LOC and total lines
     
@@ -41,8 +41,8 @@ def parse_directory(
     :param minimum_characters: Minimum characters per line for it to be counted as a line of code
     :type minimum_characters: int
     
-    :param recurse: Flag to scan subdirectories
-    :type recurse: bool
+    :param depth: Sub-directory traversal depth
+    :type depth: int
 
     :return: Passed line_data array is updated
     :rtype: NoneType
@@ -65,22 +65,21 @@ def parse_directory(
             line_data[1] += l
             continue
 
-        if not recurse:
+        if not depth:
             return
         
-        parse_directory(os.scandir(dir_entry.path), config, line_data,
+        parse_directory(os.scandir(dir_entry.path), config, line_data, depth-1,
                         file_parsing_function, file_filter_function, directory_filter_function,
-                        minimum_characters,
-                        True)
+                        minimum_characters)
 
 def parse_directory_verbose(
     directory_data: Iterator[os.DirEntry[str]],
     config: ClocConfig,
     file_parsing_function: FileParsingFunction,
+    depth: int,
     file_filter_function: Callable = lambda _: True,
     directory_filter_function: Callable = lambda _: False,
     minimum_characters: int = 0,
-    recurse: bool = False,
     *,
     output_mapping: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
@@ -99,8 +98,8 @@ def parse_directory_verbose(
     :type directory_filter_function: Callable
     :param minimum_characters: Minimum characters per line for it to be counted as a line of code
     :type minimum_characters: int
-    :param recurse: Flag to scan subdirectories
-    :type recurse: bool
+    :param recurse: Sub-directory traversal depth
+    :type recurse: int
     :param output_mapping: Mapping returned in recursive calls for aggregation.
     There is no need to pass arguments for this paraneter
     :type output_mapping: Optional[dict[str, Any]]
@@ -144,7 +143,7 @@ def parse_directory_verbose(
                 "total_lines": file_total,
             }
 
-        elif (recurse
+        elif (depth
               and dir_entry.is_dir()
               and directory_filter_function(dir_entry.path)):
             with os.scandir(dir_entry.path) as directory_iterator:
@@ -152,10 +151,10 @@ def parse_directory_verbose(
                     directory_iterator,
                     config,
                     file_parsing_function,
+                    depth-1,
                     file_filter_function,
                     directory_filter_function,
-                    minimum_characters,
-                    True)
+                    minimum_characters)
 
             subdirectories[dir_entry.name] = child
             directory_total += child["total"]

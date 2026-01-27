@@ -84,7 +84,7 @@ def main(line: Sequence[str]) -> int:
                                   "file_filter_function" : file_filter,
                                   "directory_filter_function" : directory_filter,
                                   "minimum_characters" : args.min_chars,
-                                  "recurse" : args.recurse}
+                                  "depth" : args.max_depth}
         epoch: float = time.time()
         output_mapping = {}
         if args.verbose:

@@ -32,6 +32,15 @@ def _validate_parsing_mode(arg: str) -> ParseMode:
     except ValueError:
         raise ValueError(f"Supported parsing modes: {", ".join((k for k in ParseMode._value2member_map_.keys()))}")
 
+def _validate_max_depth(arg: str) -> int:
+    try:
+        depth: int = int(arg)
+    except ValueError:
+        raise ValueError("Traversal depth must be integer value")
+    if depth < 0:
+        raise ValueError("Traversal depth cannot be negative")
+    return depth
+
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     '''Instantiate and return an argument parser
 
@@ -77,10 +86,10 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
                                     "Behaves similiar to single-line comments")))
 
     # Directory parsing logic
-    parser.add_argument("-r", "--recurse",
-                        help="Recursively scan every sub-directory too",
-                        action="store_true",
-                        default=config.recurse)
+    parser.add_argument("-md", "--max-depth",
+                        help="Recursively scan sub-directories upto the given level",
+                        type=_validate_max_depth,
+                        default=0)
 
     file_filter_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group()
 
