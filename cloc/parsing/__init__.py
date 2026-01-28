@@ -2,12 +2,12 @@
 
 from .directory import (parse_directory,
                         parse_directory_verbose)
-from .file import (parse_buffered_file,
-                   parse_complete_buffer,
-                   parse_file_mmap)
+from .extensions._parsing import (_parse_file,
+                                  _parse_file_no_chunk,
+                                  _parse_file_vm_map)
 
-__all__ = ("parse_buffered_file",
-           "parse_complete_buffer",
-           "parse_file_mmap",
+__all__ = ("_parse_file",
+           "_parse_file_no_chunk",
+           "_parse_file_vm_map",
            "parse_directory",
            "parse_directory_verbose")
