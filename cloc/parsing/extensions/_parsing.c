@@ -5,15 +5,93 @@
 #include "_comment_data.h"
 
 #ifdef _WIN32
-// TODO: Add appropriate header file
+
+#include <windows.h>
+static PyObject *
+_parse_file_vm_map(PyObject *self, PyObject *args){
+    const char *filename,
+    *singleline_character,
+    *multiline_start_character, *multiline_end_character;
+    
+    Py_ssize_t singleline_length,
+    multiline_start_length,
+    multiline_end_length,
+    minimum_characters;
+
+    if (!PyArg_ParseTuple(args,
+        "sz#z#z#n",
+        &filename,
+        &singleline_character, &singleline_length,
+        &multiline_start_character, &multiline_start_length,
+        &multiline_end_character, &multiline_end_length,
+        &minimum_characters)){
+            return NULL;
+    }
+
+    const HANDLE file_handle = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
+        OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+
+    if (file_handle == INVALID_HANDLE_VALUE){
+        PyErr_SetFromWindowsErrWithFilename(0, filename);
+        return NULL;
+    }
+
+    LARGE_INTEGER filesize;
+    GetFileSizeEx(file_handle, &filesize);
+
+    if (filesize.QuadPart == 0){
+        CloseHandle(file_handle);
+        return Py_BuildValue("ii", 0, 0);
+    } 
+    
+    const HANDLE mapping_handle = CreateFileMapping(file_handle, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (!mapping_handle){
+        CloseHandle(file_handle);
+        PyErr_SetFromWindowsErrWithFilename(0, filename);
+        return NULL;
+    }
+
+    void *mapped_region = MapViewOfFile(mapping_handle, FILE_MAP_READ, 0, 0, 0);
+    if (!mapped_region){
+        CloseHandle(file_handle);
+        CloseHandle(mapping_handle);
+        PyErr_SetFromWindowsErrWithFilename(0, filename);
+        return NULL;
+    }
+
+    const unsigned char *view = (unsigned char *) mapped_region;
+    int total_lines = 0, loc = 0, valid_symbols = 0;
+    
+    struct CommentData comment_data;
+    initialize_comment_data(
+        &comment_data,
+        singleline_character,
+        multiline_start_character,
+        multiline_end_character,
+        singleline_length,
+        multiline_start_length,
+        multiline_end_length
+    );
+
+    _parse_buffer(view, filesize.QuadPart, minimum_characters, &valid_symbols, &total_lines, &loc, &comment_data);
+
+    // Files not terminating with newline
+    if (view[filesize.QuadPart-1] != '\n'){
+        total_lines++;
+        if (valid_symbols > minimum_characters){
+            loc++;
+        }
+    }
+
+    UnmapViewOfFile(mapped_region);
+    CloseHandle(mapping_handle);
+    CloseHandle(file_handle);
+    return Py_BuildValue("ii", total_lines, loc);
+}
+
 #else
+
 #include <sys/mman.h>
-#endif
-
-#ifdef _WIN32
-// TODO: Add _parse_file_vm_map equivalent for Windows systems
-#else
-
 static PyObject *
 _parse_file_vm_map(PyObject *self, PyObject *args){
     const char *filename,
@@ -87,6 +165,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     munmap(mapped_region, st.st_size);
     return Py_BuildValue("ii", total_lines, loc);
 }
+
 
 #endif
 
