@@ -30,7 +30,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
             if (!comment_data->singleline_commented && !comment_data->commented_block){
                 if (comment_data->multiline_start_symbol
                     && buffer[i] == comment_data->multiline_start_symbol[comment_data->multiline_start_pointer]){
-                    comment_data->multiline_start_pointer++;
+                    (comment_data->multiline_start_pointer)++;
                     if (comment_data->multiline_start_pointer == comment_data->multiline_start_length){
                         comment_data->commented_block = true;
                         comment_data->multiline_start_pointer = 0;
@@ -39,7 +39,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
                 }
                 else if (comment_data->singleline_symbol
                     && buffer[i] == comment_data->singleline_symbol[comment_data->singleline_pointer]){
-                        comment_data->singleline_pointer++;
+                        (comment_data->singleline_pointer)++;
                     if (comment_data->singleline_pointer == comment_data->singleline_length){
                         comment_data->singleline_commented = true;
                         comment_data->singleline_pointer = 0;
@@ -52,7 +52,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
     
             else if (comment_data->commented_block
                 && buffer[i] == comment_data->multiline_end_symbol[comment_data->multiline_end_pointer]){
-                    comment_data->multiline_end_pointer++;
+                    (comment_data->multiline_end_pointer)++;
                     if (comment_data->multiline_end_pointer == comment_data->multiline_end_length){
                         comment_data->commented_block = false;
                         comment_data->multiline_end_pointer = 0;
