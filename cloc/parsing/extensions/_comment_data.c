@@ -4,8 +4,6 @@
 void initialize_comment_data(struct CommentData *comment_data,
     const char *singleline_symbol, const char *multiline_start_symbol, const char *multiline_end_symbol,
     unsigned int singleline_length, unsigned int multiline_start_length, unsigned int multiline_end_length){
-    comment_data->commented_block = false;
-    comment_data->singleline_commented = false;
 
     comment_data->singleline_length = singleline_length;
     comment_data->multiline_start_length = multiline_start_length;
