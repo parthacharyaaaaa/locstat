@@ -37,8 +37,6 @@ def _validate_max_depth(arg: str) -> int:
         depth: int = int(arg)
     except ValueError:
         raise ValueError("Traversal depth must be integer value")
-    if depth < 0:
-        raise ValueError("Traversal depth cannot be negative")
     return depth
 
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
@@ -87,7 +85,8 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
 
     # Directory parsing logic
     parser.add_argument("-md", "--max-depth",
-                        help="Recursively scan sub-directories upto the given level",
+                        help=" ".join(("Recursively scan sub-directories upto the given level",
+                                       "Negative values are treated as infinite depth")),
                         type=_validate_max_depth,
                         default=0)
 
