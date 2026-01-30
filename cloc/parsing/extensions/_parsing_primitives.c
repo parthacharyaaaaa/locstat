@@ -64,7 +64,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
                         (comment_data->multiline_end_pointer)++;
                         if (comment_data->multiline_end_pointer == comment_data->multiline_end_length){
                             // Multiline end pointer found
-                            *valid_characters -= comment_data->multiline_start_length + 1;
+                            *valid_characters -= (comment_data->multiline_start_length - 1);
                             break;
                         }
                         continue;
