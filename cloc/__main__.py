@@ -60,11 +60,12 @@ def main() -> int:
                                           multiline_end_symbol, 
                                           args.min_chars)
         
-        output_mapping = {"loc" : loc,
-                          "total" : total,
-                          "time" : f"{time.time()-epoch:.3f}s",
-                          "scanned at" : datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
-                          "platform" : platform.system()}
+        output_mapping = {"general" :
+                          {"loc" : loc,
+                           "total" : total,
+                           "time" : f"{time.time()-epoch:.3f}s",
+                           "scanned at" : datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
+                           "platform" : platform.system()}}
         
     else:
         extension_set: frozenset[str] = frozenset(extension for extension in
