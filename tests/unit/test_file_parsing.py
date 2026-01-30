@@ -88,6 +88,28 @@ def test_parsing_inline(mock_dir) -> None:
 
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
 
+def test_parsing_single_inline(mock_dir) -> None:
+    lines: list[str] = ['int main(){',
+                        "return 0;",
+                        "} // Inline singleline comment!"]
+
+    expected_total, expected_loc = len(lines), 2
+    mock_file: Path = mock_dir / "_mock_file.c"
+    mock_file.touch()
+    mock_file.write_text("\n".join(lines))
+
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=1)
+
+def test_parsing_split_inline(mock_dir) -> None:
+    lines: list[str] = ["int x = /* Surprise! */ 1;"]
+
+    expected_total, expected_loc = len(lines), 1
+    mock_file: Path = mock_dir / "_mock_file.c"
+    mock_file.touch()
+    mock_file.write_text("\n".join(lines))
+
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=6)
+
 def test_asymmetric_multiline_symbols(mock_dir) -> None:
     lines: list[str] = ["<!-- Start",
                         "Continuation",
@@ -115,3 +137,16 @@ def test_incorrect_comment(mock_dir) -> None:
     mock_file.write_text("\n".join(lines))
 
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
+
+def test_continuation_bytes(mock_dir) -> None:
+    lines: list[str] = ["def main() -> None:",
+                        "\tprint('Watch out!')",
+                        "\t🐍",
+                        "\t🐍🐍"]
+    
+    expected_total, expected_loc = len(lines), 3
+    mock_file: Path = mock_dir / "_mock_file.py"
+    mock_file.touch()
+    mock_file.write_text("\n".join(lines))
+
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=1)
