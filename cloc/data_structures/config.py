@@ -2,7 +2,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping
 
 from cloc.data_structures.typing import LanguageMetadata
 
@@ -15,12 +15,10 @@ __all__ = ("ClocConfig",)
 
 @dataclass(init=False, frozen=True, slots=True, weakref_slot=True)
 class ClocConfig(metaclass=SingletonMeta):
-    # Some shit idk man
     working_directory: Path
 
     # CLI Options
     verbose: bool = True
-    no_mmap: bool = False
     minimum_characters: int = 0
 
     # Language metadata

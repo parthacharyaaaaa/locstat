@@ -1,4 +1,3 @@
 [defaults]
 verbose=false
 minimum_characters=0
-no_mmap=false
