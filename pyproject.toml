@@ -33,6 +33,10 @@ Issues = "https://github.com/parthacharyaaaaa/cloc/issues"
 [project.scripts]
 pycloc = "cloc.__main__:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cloc*"]
+
 [[tool.setuptools.ext-modules]]
 name = "cloc.parsing.extensions._parsing"
 sources = ["cloc/parsing/extensions/_parsing.c",
