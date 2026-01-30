@@ -54,13 +54,12 @@ def parse_directory(
             if not file_filter_function(dir_entry.path):
                 continue
 
-            extension: str = dir_entry.name.split(".")[-1]
-            if extension in config.ignored_languages:
+            extension: str = dir_entry.name.rsplit(".", 1)[-1]
+            singleLine, multi_start, multi_end = config.symbol_mapping.get(extension, (None, None, None))
+            if not (singleLine or multi_start):
                 continue
-
-            singleLine, multiLineStart, multiLineEnd = config.symbol_mapping.get(extension, (None, None, None))
             tl, l = file_parsing_function(dir_entry.path,
-                                          singleLine, multiLineStart, multiLineEnd,
+                                          singleLine, multi_start, multi_end,
                                           minimum_characters)
             line_data[0] += tl
             line_data[1] += l
@@ -68,7 +67,8 @@ def parse_directory(
 
         if not depth:
             return
-        
+        if not directory_filter_function(dir_entry.path):
+            continue
         parse_directory(os.scandir(dir_entry.path), config,
                         line_data,
                         depth-1,
@@ -124,14 +124,14 @@ def parse_directory_record(
             if not file_filter_function(dir_entry.path):
                 continue
 
-            extension: str = dir_entry.name.split(".")[-1]
-            if extension in config.ignored_languages:
+            extension: str = dir_entry.name.rsplit(".", 1)[-1]
+            singleLine, multi_start, multi_end = config.symbol_mapping.get(extension, (None, None, None))
+            if not (singleLine or multi_start):
                 continue
-            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
 
-            singleLine, multiLineStart, multiLineEnd = config.symbol_mapping.get(extension, (None, None, None))
+            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
             tl, l = file_parsing_function(dir_entry.path,
-                                          singleLine, multiLineStart, multiLineEnd,
+                                          singleLine, multi_start, multi_end,
                                           minimum_characters)
             line_data[0] += tl
             line_data[1] += l
@@ -143,6 +143,8 @@ def parse_directory_record(
         if not depth:
             return
         
+        if not directory_filter_function(dir_entry.path):
+            continue
         parse_directory_record(os.scandir(dir_entry.path), config,
                                line_data, language_record,
                                depth-1,
@@ -209,13 +211,13 @@ def parse_directory_verbose(
                 continue
 
             extension = dir_entry.name.rsplit(".", 1)[-1]
-            if extension in config.ignored_languages:
-                continue
-            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
-
             single, multi_start, multi_end = config.symbol_mapping.get(
                 extension, (None, None, None)
             )
+
+            if not (single or multi_end):
+                continue
+            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
 
             file_total, file_loc = file_parsing_function(
                 dir_entry.path,
