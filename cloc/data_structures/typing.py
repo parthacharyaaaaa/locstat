@@ -1,19 +1,17 @@
 import os
-from typing import Any, Literal, MutableMapping, Optional, Protocol, TypeAlias, TypeVar, Union
+from typing import Any, Literal, Optional, Protocol, TypeAlias, TypeVar, Union
 
-__all__ = ("OutputMapping",
-           "LanguageMetadata",
+__all__ = ("LanguageMetadata",
            "OutputFunction",
            "SupportsBuffer",
            "FileParsingFunction",
            "SupportsMembershipChecks")
 
-OutputMapping: TypeAlias = MutableMapping[str, Union[MutableMapping[str, Any], int, str]]
 LanguageMetadata: TypeAlias = tuple[Optional[bytes], Optional[bytes], Optional[bytes]]
 
 class OutputFunction(Protocol):
     def __call__(self,
-                 output_mapping: OutputMapping,
+                 output_mapping: dict[str, Any],
                  filepath: Union[str, os.PathLike[str], int],
                  mode: Literal["w+", "a"] = "w+") -> None:
         ...
