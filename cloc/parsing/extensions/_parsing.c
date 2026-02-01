@@ -80,9 +80,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     // Files not terminating with newline
     if (view[filesize.QuadPart-1] != '\n'){
         total_lines++;
-        if (valid_symbols >= minimum_characters){
-            loc++;
-        }
+        loc += (valid_symbols >= minimum_characters);
     }
 
     UnmapViewOfFile(mapped_region);
@@ -132,7 +130,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
         fclose(file);
         return Py_BuildValue("ii", 0, 0);
     }
-    void *mapped_region = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fileno(file), 0);
+    void *mapped_region = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fileno(file), 0);
     if (mapped_region == MAP_FAILED){
         fclose(file);
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
@@ -158,9 +156,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     // Files not terminating with newline
     if (view[st.st_size-1] != '\n'){
         total_lines++;
-        if (valid_symbols >= minimum_characters){
-            loc++;
-        }
+        loc += (valid_symbols >= minimum_characters);
     }
 
     fclose(file);
@@ -223,9 +219,7 @@ _parse_file(PyObject *self, PyObject *args){
     if (last_byte != '\n' 
         && last_byte != uchar_sentinel){
         total_lines++;
-        if (valid_symbols >= minimum_characters){
-            loc++;
-        }
+        loc += (valid_symbols >= minimum_characters);
     }
     fclose(file);
     return Py_BuildValue("ii", total_lines, loc);
@@ -287,9 +281,7 @@ _parse_file_no_chunk(PyObject *self, PyObject *args){
     // Files not terminating with newline
     if (buffer[filelength-1] != '\n'){
         total_lines++;
-        if (valid_symbols >= minimum_characters){
-            loc++;
-        }
+        loc += (valid_symbols >= minimum_characters);
     }
     fclose(file);
     return Py_BuildValue("ii", total_lines, loc);
