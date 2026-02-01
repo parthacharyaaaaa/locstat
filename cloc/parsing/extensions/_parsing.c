@@ -4,6 +4,8 @@
 #include "_parsing_prinitives.h"
 #include "_comment_data.h"
 
+#define uchar_sentinel '0'
+
 #ifdef _WIN32
 
 #include <windows.h>
@@ -199,6 +201,7 @@ _parse_file(PyObject *self, PyObject *args){
     int total_lines = 0, loc = 0, valid_symbols = 0;
     const size_t buffer_size = 4 * 1024 * 1024;
     unsigned char buffer[buffer_size];
+    unsigned char last_byte = uchar_sentinel;
     size_t chunk_size;
 
     struct CommentData comment_data;
@@ -213,10 +216,12 @@ _parse_file(PyObject *self, PyObject *args){
     );
 
     while ((chunk_size = fread(buffer, 1, buffer_size, file)) > 0){
+        last_byte = buffer[chunk_size-1];
         _parse_buffer(buffer, chunk_size, minimum_characters, &valid_symbols, &total_lines, &loc, &comment_data);
     }
     // Files not terminating with newline
-    if (buffer[chunk_size-1] != '\n'){
+    if (last_byte != '\n' 
+        && last_byte != uchar_sentinel){
         total_lines++;
         if (valid_symbols >= minimum_characters){
             loc++;
