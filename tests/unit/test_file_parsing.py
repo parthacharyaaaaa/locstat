@@ -159,3 +159,13 @@ def test_continuation_bytes(mock_dir) -> None:
     mock_file.write_text("\n".join(lines))
 
     _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=2)
+
+def test_missing_newline(mock_dir) -> None:
+    lines: list[str] = ["def main() -> None: ..."]
+    expected_total, expected_loc = 1, 1
+
+    mock_file: Path = mock_dir / "_mock_file.py"
+    mock_file.touch()
+    mock_file.write_text("\n".join(lines))
+
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc)
