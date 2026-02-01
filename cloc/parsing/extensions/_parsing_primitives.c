@@ -36,7 +36,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
                   Progress until EOF or newline
                 */
                 for(; i < buffer_size && buffer[i] != '\n'; i++);
-                i -= (buffer[i] == '\n'); // Let outer loop handle newline
+                i -= (i < buffer_size && buffer[i] == '\n'); // Let outer loop handle newline
                 continue;
             }
             comment_data->partial_matches |= 0b10000000;
