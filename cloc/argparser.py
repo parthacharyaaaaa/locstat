@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 import os
 import sys
 from typing import Final, Sequence
@@ -60,6 +61,19 @@ def _validate_verbosity(arg: str) -> Verbosity:
                                    "\n")))
         sys.exit(1)
 
+def _validate_config_args(config: ClocConfig,
+                          arg: str,
+                          /,
+                          copy: list[str] = []) -> str:
+    if ((arg:=arg.lower()) not in config.configurable
+        and (len(copy) % 2 == 0)):
+        sys.stdout.write(" ".join((f"No such configurable option: {arg}.",
+                                   "Available configurations:",
+                                   ", ".join(config.configurable))))
+        sys.exit(1)
+    copy.append(arg)
+    return arg
+
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     '''Instantiate and return an argument parser
 
@@ -68,23 +82,32 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     
     :return: argparse.ArgumentParser'''
 
-    parser: Final[argparse.ArgumentParser] = argparse.ArgumentParser(prog="pycloc",
+    name: Final[str] = "pycloc"
+    parser: Final[argparse.ArgumentParser] = argparse.ArgumentParser(prog=name,
                                                                      description="CLI tool to count lines of code")
-    # Tool identification
-    parser.add_argument("-v", "--version",
-                        help="Current version of cloc",
-                        action="store_true")
 
+    required_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
+    # Tool identification
+    required_group.add_argument("-v", "--version",
+                                help=f"Current version of {name}",
+                                action="store_true")
+
+    # Configurations
+    required_group.add_argument("-c", "--config",
+                                help=" ".join((f"View and edit default configurations for {name}.",
+                                               "Available configurations:",
+                                               ", ".join(config.configurable))),
+                                nargs="*",
+                                type=partial(_validate_config_args, config))
     # Target
-    target_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
-    target_group.add_argument("-d", "--dir",
+    required_group.add_argument("-d", "--dir",
                         type=_validate_directory,
                         help="Specify the directory to scan. Either this or '-f' must be used")
 
-    target_group.add_argument("-f", "--file",
+    required_group.add_argument("-f", "--file",
                         type=_validate_filepath,
                         help="Specify the file to scan. Either this or '-d' must be used")
-
+    
     # Parsing logic manipulation
     parser.add_argument("-mc", "--min-chars",
                         type=_validate_min_chars,
@@ -158,6 +181,13 @@ def parse_arguments(line: Sequence[str],
     parsed_arguments: argparse.Namespace = parser.parse_args(line)
     
     # Additional validation rules not covered in parse_args
+    configurations_args_length: int = len(parsed_arguments.config)
+    if configurations_args_length % 2 != 0:
+        raise ValueError("Invalid syntax for configuration, must either be empty or in pairs")
+    
+    # Format parsed_arguments.config into list of key, value pairs
+    parsed_arguments.config = [(parsed_arguments.config[i], parsed_arguments.config[i+1])
+                               for i in range(0, configurations_args_length-1, 2)]
     # TODO: Add additional mutual exclusion logic
 
     return parsed_arguments

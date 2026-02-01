@@ -1,3 +1,5 @@
 [defaults]
-verbosity="BARE"
+max_depth=-1
 minimum_characters=1
+parsing_mode="MMAP"
+verbosity="REPORT"
