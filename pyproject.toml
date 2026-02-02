@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cloc"
-version = "1.0.0"
+dynamic = ["version"]
 authors = [
   { name="Parth Acharya", email="parthacharya@protonmail.com" }
 ]
@@ -32,6 +32,9 @@ Issues = "https://github.com/parthacharyaaaaa/cloc/issues"
 
 [project.scripts]
 pycloc = "cloc.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "cloc.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
