@@ -3,11 +3,19 @@ from dataclasses import dataclass, field
 import pytest
 
 from cloc.data_structures.verbosity import Verbosity
+from cloc.data_structures.parse_modes import ParseMode
 
 @dataclass
 class MockConfig:
     verbosity: Verbosity = field(default=Verbosity.BARE)
     minimum_characters: int = field(default=1)
+    max_depth: int = field(default=-1)
+    parsing_mode: ParseMode = field(default=ParseMode.BUFFERED)
+
+    @property
+    def configurable(self) -> frozenset[str]:
+        return frozenset(["verbosity", "minimum_characters",
+                          "max_depth", "parsing_mode"])
 
 @pytest.fixture
 def mock_config() -> MockConfig:

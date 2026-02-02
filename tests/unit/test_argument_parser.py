@@ -24,7 +24,7 @@ def test_exclusive_groups(mock_config, mock_dir) -> None:
             failed = True
         finally:
             assert failed, \
-            f"Illlegal argument combination '{combination}' accepted by argument parser"
+            f"Illegal argument combination '{combination}' accepted by argument parser"
 
 def test_allowed_combinations(mock_config, mock_dir):
     parser: argparse.ArgumentParser = initialize_parser(mock_config)
