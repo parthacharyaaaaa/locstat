@@ -6,9 +6,10 @@ import time
 from array import array
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Final, Literal, Optional, Union
+from typing import Any, Callable, Final, Literal, Union
 
 from cloc.argparser import initialize_parser, parse_arguments
+from cloc import __version__, __tool_name__
 from cloc.data_structures.config import ClocConfig
 from cloc.data_structures.typing import FileParsingFunction, LanguageMetadata
 from cloc.data_structures.verbosity import Verbosity
@@ -29,8 +30,8 @@ def main() -> int:
     args: argparse.Namespace = parse_arguments(sys.argv[1:], parser)
 
     if args.version:
-        # TODO: Add logic to display version info
-        pass
+        print(f"{__tool_name__} {__version__}")
+        return 0
 
     # Because of nargs="*" in argparser's config argument,
     # the only way to determine whether --config was passed

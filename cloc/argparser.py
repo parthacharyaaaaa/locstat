@@ -4,6 +4,7 @@ import os
 import sys
 from typing import Final, Sequence
 
+from cloc import __tool_name__
 from cloc.data_structures.config import ClocConfig
 from cloc.data_structures.parse_modes import ParseMode
 from cloc.data_structures.verbosity import Verbosity
@@ -82,19 +83,18 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     
     :return: argparse.ArgumentParser'''
 
-    name: Final[str] = "pycloc"
-    parser: Final[argparse.ArgumentParser] = argparse.ArgumentParser(prog=name,
+    parser: Final[argparse.ArgumentParser] = argparse.ArgumentParser(prog=__tool_name__,
                                                                      description="CLI tool to count lines of code")
 
     required_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
     # Tool identification
     required_group.add_argument("-v", "--version",
-                                help=f"Current version of {name}",
+                                help=f"Current version of {__tool_name__}",
                                 action="store_true")
 
     # Configurations
     required_group.add_argument("-c", "--config",
-                                help=" ".join((f"View and edit default configurations for {name}.",
+                                help=" ".join((f"View and edit default configurations for {__tool_name__}.",
                                                "Available configurations:",
                                                ", ".join(config.configurable))),
                                 nargs="*",
