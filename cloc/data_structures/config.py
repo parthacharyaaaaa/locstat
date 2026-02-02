@@ -1,30 +1,41 @@
+from enum import StrEnum
 import json
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Final, Mapping
 
 from cloc.data_structures.exceptions import InvalidConfigurationException
 from cloc.data_structures.singleton import SingletonMeta
 from cloc.data_structures.typing import LanguageMetadata
 from cloc.data_structures.verbosity import Verbosity
+from cloc.data_structures.parse_modes import ParseMode
 
 __all__ = ("ClocConfig",)
 
-@dataclass(init=False, frozen=True, slots=True, weakref_slot=True)
+@dataclass(init=False, slots=True, weakref_slot=True)
 class ClocConfig(metaclass=SingletonMeta):
     working_directory: Path
 
     # CLI Options
     verbosity: Verbosity = Verbosity.BARE
     minimum_characters: int = 0
+    max_depth: int = -1
+    parsing_mode: ParseMode = ParseMode.BUFFERED
 
     # Language metadata
     symbol_mapping: MappingProxyType[str, LanguageMetadata]
     ignored_languages: set[str]
 
+    config_file: str
+
     additional_kwargs: dict[str, Any] = field(default_factory = dict)
+
+    @property
+    def configurable(self) -> frozenset[str]:
+        return frozenset(["verbosity", "minimum_characters",
+                          "max_depth", "parsing_mode"])
 
     @staticmethod
     def flatten_mapping(mapping: Mapping[Any, Any]) -> dict[Any, Any]:
@@ -44,6 +55,7 @@ class ClocConfig(metaclass=SingletonMeta):
         with open(config_file, 'r', encoding="utf-8") as configurations:
             config_dict: dict[str, Any] = cls.flatten_mapping(tomllib.loads(configurations.read()))
         instance: ClocConfig = cls()
+        object.__setattr__(instance, "config_file", config_file)
 
         additional_kwargs: dict[str, Any] = {}
         for tag, attr in config_dict.items():
@@ -52,6 +64,8 @@ class ClocConfig(metaclass=SingletonMeta):
                 continue
             if not isinstance(attr, cls.__annotations__[tag]):
                 try:
+                    if issubclass(cls.__annotations__[tag], (ParseMode, Verbosity)):
+                        attr = attr.upper()
                     attr = cls.__annotations__[tag](attr)
                 except (ValueError, TypeError):
                     raise InvalidConfigurationException(
@@ -85,3 +99,48 @@ class ClocConfig(metaclass=SingletonMeta):
                                         multiend.encode() if multiend else None)
         object.__setattr__(instance, "symbol_mapping", symbol_mapping)
         return instance
+    
+    @property
+    def configurations(self) -> dict[str, Any]:
+        return {config_key : getattr(self, config_key)
+                for config_key in sorted(self.configurable)}
+    
+    @property
+    def configurations_string(self) -> str:
+        return "\n".join(f"{k} : {v}" for k,v in self.configurations.items())
+    
+    @staticmethod
+    def _cast_toml_dtype(value: str|int) -> str|int:
+        if isinstance(value, bool):
+            return str(value).lower()
+        return value
+
+    @staticmethod
+    def config_default_toml_dumps(d: dict[str, Any]) -> str:
+        lines: list[str] = ["[defaults]"]
+        for k, v in d.items():
+            casted: str|int = ClocConfig._cast_toml_dtype(v)
+            if isinstance(casted, str):
+                casted = f"\"{casted}\""
+            lines.append("=".join((k, str(casted))))
+        return "\n".join(lines)
+
+    def update_configuration(self, configuration: str, value: Any) -> None:
+        if configuration not in self.configurable:
+            raise ValueError(f"Item {configuration} not supported")
+        
+        datatype: type[Any] = ClocConfig.__annotations__[configuration]
+        if not isinstance(value, datatype):
+            try:
+                # What an awful hack
+                if issubclass(datatype, (ParseMode, Verbosity)):
+                    value = value.upper()
+                value = datatype(value)
+            except (ValueError, TypeError):
+                raise InvalidConfigurationException(" ".join((f"Value {value} unsupported",
+                                                              f"for configuration {configuration},"
+                                                              "expected type:",
+                                                              str(datatype).split("'")[1])))
+        setattr(self, configuration, value)
+        with open(self.config_file, "w") as config_file:
+            config_file.write(ClocConfig.config_default_toml_dumps(self.configurations))

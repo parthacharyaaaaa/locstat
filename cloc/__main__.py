@@ -28,6 +28,22 @@ def main() -> int:
     parser: Final[argparse.ArgumentParser] = initialize_parser(config)
     args: argparse.Namespace = parse_arguments(sys.argv[1:], parser)
 
+    if args.version:
+        # TODO: Add logic to display version info
+        pass
+
+    # Because of nargs="*" in argparser's config argument,
+    # the only way to determine whether --config was passed
+    # is by negation of remaining args in the same mutually exclusive group 
+    if not (args.file or args.dir):
+        if not args.config: # View current configurations
+            print(config.configurations_string)
+            return 0
+        
+        for (key, value) in (args.config):    # items in pairs
+            config.update_configuration(key, value)
+        return 0
+
     output_mapping: dict[str, Any] = {}
     
     file_parser_function: Final[FileParsingFunction] = derive_file_parser(args.parsing_mode)
