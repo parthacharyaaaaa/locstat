@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
 #include "_parsing_prinitives.h"
@@ -196,7 +195,7 @@ _parse_file(PyObject *self, PyObject *args){
 
     int total_lines = 0, loc = 0, valid_symbols = 0;
     const size_t buffer_size = 4 * 1024 * 1024;
-    unsigned char buffer[buffer_size];
+    unsigned char *buffer = malloc(buffer_size);
     unsigned char last_byte = uchar_sentinel;
     size_t chunk_size;
 

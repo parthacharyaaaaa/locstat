@@ -9,7 +9,7 @@ static bool _is_ignorable(unsigned char c) {
 
 void
 _parse_buffer(unsigned char *buffer, size_t buffer_size,
-    int minimum_characters, int *valid_characters,
+    Py_ssize_t minimum_characters, int *valid_characters,
     int *total, int *loc,
     struct CommentData *comment_data){
 
