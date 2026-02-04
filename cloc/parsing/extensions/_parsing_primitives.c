@@ -3,8 +3,7 @@
 #include <stdbool.h>
 
 static bool _is_ignorable(unsigned char c) {
-    return ((c == 0x20) || (c == 0x09) || (c == 0x0D)
-            || (c == 0x0B) || (c == 0x0C));
+    return ((c == 0x20) || (c == 0x09) || (c == 0x0B) || (c == 0x0C));
 }
 
 void
@@ -41,6 +40,8 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
         }
 
         if ((buffer[i] & 0b11000000) == 0b10000000) continue;
+        if (buffer[i] == '\r') continue;
+
         if (_is_ignorable(buffer[i])){
             comment_data->singleline_pointer = 0;
             comment_data->multiline_start_pointer = 0;
