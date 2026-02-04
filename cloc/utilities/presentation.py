@@ -1,17 +1,15 @@
-import csv
 import json
 import os
 from io import TextIOWrapper
 from types import MappingProxyType
 from typing import (Any, Final, Literal,
-                    MutableMapping, Optional, Sequence,
+                    Optional, Sequence,
                     Union)
 
 from cloc.data_structures.typing import OutputFunction
 
 __all__ = ("dump_std_output",
            "dump_json_output",
-           "dump_csv_output",
            "OUTPUT_MAPPING")
 
 def _format_row(row: Sequence[Union[str, int]], widths: Sequence[int]) -> str:
@@ -118,7 +116,6 @@ def dump_std_output(output_mapping: dict[str, Any],
                     is_last=idx == len(tree) - 1,
                 )
 
-
 def dump_json_output(output_mapping: dict[str, Any],
                      filepath: Union[str, os.PathLike[str], int],
                      mode: Literal["w+", "a"] = "w+") -> None:
@@ -130,30 +127,6 @@ def dump_json_output(output_mapping: dict[str, Any],
     with open(filepath, mode=mode) as output_file:
         output_file.write(json.dumps(output_mapping, indent=2))
 
-def dump_csv_output(output_mapping: dict[str, Any],
-                    filepath: Union[str, os.PathLike[str], int],
-                    mode: Literal["w+", "a"] = "w+") -> None:
-    with open(filepath, newline='', mode=mode) as csvFile:
-        writer = csv.writer(csvFile)
-        assert isinstance(output_mapping["general"], MutableMapping)
-        general_data: Optional[MutableMapping[str, Any]] = output_mapping.get("general")    #type: ignore
-
-        if not general_data:
-            writer.writerow(output_mapping.keys())
-            writer.writerow(output_mapping.values())
-        else:
-            writer.writerow(general_data.keys())
-            writer.writerow(general_data.values())
-            writer.writerow(())
-
-            # Write actual, per file data
-            writer.writerow(("DIRECTORY", "FILE", "LOC", "TOTAL"))
-            writer.writerow(())
-            writer.writerows((dir, filename, fileData["loc"], fileData["total_lines"])
-                             for dir, file in output_mapping.items()
-                             for filename, fileData in file.items())    # type: ignore
-
 OUTPUT_MAPPING: Final[MappingProxyType[str, OutputFunction]] = MappingProxyType({
     "json" : dump_json_output,
-    "csv" : dump_csv_output,
 })
