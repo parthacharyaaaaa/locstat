@@ -49,7 +49,8 @@ def parse_directory(
     :rtype: NoneType
     '''
     for dir_entry in directory_data:
-        if dir_entry.is_file():
+        if dir_entry.is_symlink(): continue
+        if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
                 continue
@@ -119,7 +120,8 @@ def parse_directory_record(
     :rtype: NoneType
     '''
     for dir_entry in directory_data:
-        if dir_entry.is_file():
+        if dir_entry.is_symlink(): continue
+        if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
                 continue
@@ -205,7 +207,8 @@ def parse_directory_verbose(
     subdirectories: dict[str, Any] = {}
 
     for dir_entry in directory_data:
-        if dir_entry.is_file():
+        if dir_entry.is_symlink(): continue
+        if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
                 continue
