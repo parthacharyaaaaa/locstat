@@ -6,6 +6,7 @@ from cloc.parsing.extensions._parsing import (_parse_file_vm_map,
                                               _parse_file)
 from cloc.data_structures.typing import FileParsingFunction, LanguageMetadata
 from tests.fixtures import mock_dir
+from tests.constants import UNIX_NEWLINE, WIN_NEWLINE
 
 def _test_helper_run_all_parsers(file: Path,
                                  comment_data: LanguageMetadata,
@@ -33,8 +34,11 @@ def test_parsing_singleline_only(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 3
     mock_file: Path = mock_dir / "_mock_file.py"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
-    
+
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc)
 
 def test_parsing_multiline_only(mock_dir) -> None:
@@ -57,8 +61,11 @@ def test_parsing_multiline_only(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 6
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
 
 def test_parsing_nested(mock_dir) -> None:
@@ -72,8 +79,11 @@ def test_parsing_nested(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 1
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
     
 def test_parsing_inline(mock_dir) -> None:
@@ -84,8 +94,11 @@ def test_parsing_inline(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 3
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
 
 def test_parsing_single_inline(mock_dir) -> None:
@@ -96,8 +109,11 @@ def test_parsing_single_inline(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 2
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
+    
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=2)
 
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=2)
 
 def test_parsing_split_inline(mock_dir) -> None:
@@ -106,8 +122,11 @@ def test_parsing_split_inline(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 1
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=7)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc, minimum_characters=7)
 
 def test_asymmetric_multiline_symbols(mock_dir) -> None:
@@ -119,8 +138,11 @@ def test_asymmetric_multiline_symbols(mock_dir) -> None:
 
     mock_file: Path = mock_dir / "_mock_file.html"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (None, b"<!--", b"-->"), expected_total, expected_loc)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (None, b"<!--", b"-->"), expected_total, expected_loc)
 
 def test_incorrect_comment(mock_dir) -> None:
@@ -134,8 +156,11 @@ def test_incorrect_comment(mock_dir) -> None:
     expected_total, expected_loc = len(lines), 2
     mock_file: Path = mock_dir / "_mock_file.c"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
+    
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"//", b"/*", b"*/"), expected_total, expected_loc)
 
 def test_min_chars_0(mock_dir) -> None:
@@ -143,8 +168,11 @@ def test_min_chars_0(mock_dir) -> None:
     expected_total = expected_loc = len(lines)
     mock_file: Path = mock_dir / "_mock_file.py"
     mock_file.touch()
-    mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=0)
+
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=0)
 
 def test_continuation_bytes(mock_dir) -> None:
@@ -158,6 +186,10 @@ def test_continuation_bytes(mock_dir) -> None:
     mock_file.touch()
     mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=2)
+    
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc, minimum_characters=2)
 
 def test_missing_newline(mock_dir) -> None:
@@ -168,4 +200,8 @@ def test_missing_newline(mock_dir) -> None:
     mock_file.touch()
     mock_file.write_text("\n".join(lines))
 
+    mock_file.write_text(UNIX_NEWLINE.join(lines))
+    _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc)
+    
+    mock_file.write_text(WIN_NEWLINE.join(lines))
     _test_helper_run_all_parsers(mock_file, (b"#", None, None), expected_total, expected_loc)
