@@ -16,6 +16,16 @@ jobs:
       image: python:${{ matrix.python-version }}
     
     steps:
-      - uses: actions/checkout@v3
-      - run: pip install .[dev] --no-cache-dir --force-reinstall
-      - run: pytest -s  
+      - uses: actions/checkout@v5
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build Python
+        run: | 
+          python3 -m pip install --upgrade pip
+          pip install build pytest
+          pip install -e . --force-reinstall
+      
+      - run: pytest -s
