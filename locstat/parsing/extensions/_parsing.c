@@ -1,4 +1,3 @@
-#include <Python.h>
 #include <stdbool.h>
 #include "_parsing_prinitives.h"
 #include "_comment_data.h"
