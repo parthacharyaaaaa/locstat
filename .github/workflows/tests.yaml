@@ -2,6 +2,11 @@ name: dev_test_project
 on:
   push:
     branches: [main]
+    paths: ["**.py", "**.c", "**.h", "**.toml", "*languages.json", "*MANIFEST.in"]
+  pull_request:
+    branches: [main]
+    paths: ["**.py", "**.c", "**.h", "**.toml", "*languages.json", "*MANIFEST.in"]
+    types: ["opened", "reopened", "synchronize"]
 
 jobs:
   test:
