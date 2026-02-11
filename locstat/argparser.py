@@ -36,7 +36,7 @@ def _validate_min_chars(arg: str) -> int:
     return min_chars
 
 def _validate_parsing_mode(arg: str) -> ParseMode:
-    arg = arg.strip().upper()
+    arg = arg.strip().upper() 
     try:
         return ParseMode(arg)
     except ValueError:
