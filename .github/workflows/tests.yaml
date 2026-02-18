@@ -10,7 +10,7 @@ on:
     types: ["opened", "reopened", "synchronize"]
 
 env:
-  OUTPUT_DIRECTORY: "/tmp/wheelhouse"
+  OUTPUT_DIRECTORY: ${{ runner.temp }}/wheelhouse
 
 jobs:
   test:
