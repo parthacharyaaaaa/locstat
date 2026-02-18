@@ -17,9 +17,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+    "License :: OSI Approved :: MIT License"
 ]
-keywords = ["locstat", "locstat", "py-locstat", "loc"]
+keywords = ["locstat", "py-locstat", "loc"]
 
 [project.optional-dependencies]
 dev = ["pytest", "build"]
