@@ -9,9 +9,6 @@ on:
     paths: ["**/*.py", "**/*.c", "**/*.h", "**/*.toml", "**/languages.json", "MANIFEST.in"]
     types: ["opened", "reopened", "synchronize"]
 
-env:
-  OUTPUT_DIRECTORY: ${{ runner.temp }}/wheelhouse
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -53,18 +50,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      - run: mkdir $OUTPUT_DIRECTORY
-
       - name: Run cibuildwheels
         uses: pypa/cibuildwheel@v3.3.1
         with:
-          output-dir: ${{ env.OUTPUT_DIRECTORY }}
+          output-dir: ${{ runner.temp }}/wheelhouse
 
       - name: Persist files for publish jobs
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
-          path: ${{ env.OUTPUT_DIRECTORY }}
+          path: ${{ runner.temp }}/wheelhouse
 
   build-sdist:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -75,15 +70,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: mkdir $OUTPUT_DIRECTORY
-
       - name: Build sdist
-        run: pipx run build --sdist -o $OUTPUT_DIRECTORY
+        run: pipx run build --sdist -o ${{ runner.temp }}/wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
-          path: ${{ env.OUTPUT_DIRECTORY }}
+          path: ${{ runner.temp }}/wheelhouse
   
   publish:
     name: Publish release to Pypi
