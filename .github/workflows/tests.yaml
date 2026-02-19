@@ -1,4 +1,4 @@
-name: dev_test_project
+name: release_pipeline
 on:
   push:
     branches: [main]
