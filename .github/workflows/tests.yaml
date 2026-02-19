@@ -93,4 +93,5 @@ jobs:
 
         # Temporary argument to test uploads to TestPyPI
         with:
+          verbose: true
           repository-url: https://test.pypi.org/legacy/
