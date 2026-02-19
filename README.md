@@ -8,7 +8,7 @@
     * [Finer Parsing Control](#finer-parsing-controls)
     * [Emitting Results](#emitting-results)
 
-* [Examples](#usage)
+* [Examples](#examples)
 
 * [Customizations](#customizations)
 * [License](#license)
@@ -29,6 +29,7 @@ $ locstat [-h] (-v VERSION | -c CONFIG | -f FILE | -d DIR) [options]
 ```
 
 ### Primary Action
+---
 A primary action must be specified when invoking the tool through the command line, namely:
 * **-v/--version**: Display the installed version and exit
 * **-h/--help**: Display the help message and exit
@@ -39,7 +40,8 @@ A primary action must be specified when invoking the tool through the command li
 
 Note: These options are **mutually exclusive**
 
-### Parsing Filters:
+### Parsing Filters
+---
 #### Directories:
 **-xd/--exclude-dir**: Directory paths following this flag will be ignored.
 
@@ -55,27 +57,29 @@ Note: These options are **mutually exclusive**
 **-it/--include-type**: Only file extensions following this flag will be parsed.
 
 ### Finer Parsing Controls
+---
 **-pm/--parsing-mode**: Override default file parsing behaviour. Available options: MMAP, BUF, COMP.
 
-**BUF**: Default parsing mode. Allocates a buffer of 4MB and reads files in chunks into this buffer.
+1) **BUF**: Default parsing mode. Allocates a buffer of 4MB and reads files in chunks into this buffer.
 
-**MMAP**: Map files to the virtual memory of the locstat process in an attempt to reduce the number of syscalls. May improve performance for hot page caches or for larger source files. Uses `mmap` and `madvice` on Linux and Mac systems, or `CreateFileMapping` and `MapViewOfFile` on Windows.
+2) **MMAP**: Map files to the virtual memory of the locstat process in an attempt to reduce the number of syscalls. May improve performance for hot page caches or for larger source files. Uses `mmap` and `madvice` on Linux and Mac systems, or `CreateFileMapping` and `MapViewOfFile` on Windows.
 
-**COMP**: Read the entire file at once without any buffering.
+3) **COMP**: Read the entire file at once without any buffering.
 
 **-vb/--verbosity**: Amount of statistics to include in the final report. Available modes:
 
-BARE: Default mode, count only total lines and lines of code.
+1) **BARE**: Default mode, count only total lines and lines of code.
 
-REPORT: Additionally include language metadata, i.e. number of files, total lines, and lines of code per file extension parsed.
+2) **REPORT**: Additionally include language metadata, i.e. number of files, total lines, and lines of code per file extension parsed.
 
-DETAILED: Additionally include language metadata and per directory and per file line statistics.
+3) **DETAILED**: Additionally include language metadata and per directory and per file line statistics.
 
 **-md/--max-depth**: Recursively scan sub-directories upto the given level. Negative values are treated as infinite depth. Defaults to -1
 
 **-mc/--min-chars**: Specify the minimum number of non-whitespace characters a line should have to be considered an LOC. Defaults to 1.
 
 ### Emitting Results
+---
 **-o/--output**: Specify output file to dump counts into. If not specified, output is dumped to `stdout`. If output file is in json then output is formatted differently.
 
 ## Examples
