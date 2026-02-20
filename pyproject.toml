@@ -20,7 +20,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "License :: OSI Approved :: MIT License"
 ]
-keywords = ["locstat", "py-locstat", "loc"]
+keywords = ["locstat", "py-locstat", "loc", "cloc", "parsing", "py-cloc", "pycloc"]
 
 [project.optional-dependencies]
 dev = ["pytest", "build"]
