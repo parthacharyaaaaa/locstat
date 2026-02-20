@@ -2,50 +2,61 @@ from typing import Callable, Literal, Optional
 
 from locstat.data_structures.parse_modes import ParseMode
 from locstat.data_structures.typing import SupportsMembershipChecks, FileParsingFunction
-from locstat.parsing.extensions._parsing import (_parse_file_vm_map,
-                                              _parse_file,
-                                              _parse_file_no_chunk)
+from locstat.parsing.extensions._parsing import (
+    _parse_file_vm_map,
+    _parse_file,
+    _parse_file_no_chunk,
+)
 
-__all__ = ("construct_file_filter",
-           "construct_directory_filter",
-           "derive_file_parser")
+__all__ = ("construct_file_filter", "construct_directory_filter", "derive_file_parser")
 
-def construct_file_filter(extension_set: Optional[SupportsMembershipChecks[str]] = None,
-                          file_set: Optional[SupportsMembershipChecks[str]] = None,
-                          include_file: bool = False,
-                          exclude_file: bool = False,
-                          include_type: bool = False,
-                          exclude_type: bool = False) -> Callable[[str, str], bool]:
+
+def construct_file_filter(
+    extension_set: Optional[SupportsMembershipChecks[str]] = None,
+    file_set: Optional[SupportsMembershipChecks[str]] = None,
+    include_file: bool = False,
+    exclude_file: bool = False,
+    include_type: bool = False,
+    exclude_type: bool = False,
+) -> Callable[[str, str], bool]:
     if extension_set is None:
         extension_set = {}
     if file_set is None:
         file_set = {}
-    
+
     def file_filter(file: str, extension: str) -> bool:
         file_match = (
-            True if not (include_file or exclude_file)
-            else file in file_set if include_file
-            else file not in file_set
+            True
+            if not (include_file or exclude_file)
+            else file in file_set if include_file else file not in file_set
         )
 
         type_match = (
-            True if not (include_type or exclude_type)
-            else extension in extension_set if include_type
-            else extension not in extension_set
+            True
+            if not (include_type or exclude_type)
+            else (
+                extension in extension_set
+                if include_type
+                else extension not in extension_set
+            )
         )
 
         return file_match and type_match
-    
+
     return file_filter
 
-def construct_directory_filter(directories: SupportsMembershipChecks[str],
-                               exclude: bool = False,
-                               include: bool = False) -> Callable[[str], bool]:
+
+def construct_directory_filter(
+    directories: SupportsMembershipChecks[str],
+    exclude: bool = False,
+    include: bool = False,
+) -> Callable[[str], bool]:
     if exclude:
-        return lambda directory : directory not in directories
+        return lambda directory: directory not in directories
     elif include:
-        return lambda directory : directory in directories
-    return lambda directory : True
+        return lambda directory: directory in directories
+    return lambda directory: True
+
 
 def derive_file_parser(option: ParseMode) -> FileParsingFunction:
     if option == ParseMode.MMAP:
@@ -53,4 +64,3 @@ def derive_file_parser(option: ParseMode) -> FileParsingFunction:
     elif option == ParseMode.COMPLETE:
         return _parse_file_no_chunk
     return _parse_file
-    

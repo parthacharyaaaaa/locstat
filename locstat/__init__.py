@@ -1,4 +1,4 @@
-'''locstat: Count lines of code'''
+"""locstat: Count lines of code"""
 
 __version__ = "1.0.12"
 __author__ = "Parth Acharya"

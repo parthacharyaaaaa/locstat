@@ -5,22 +5,22 @@ from typing import Any, Callable, Iterator, Optional
 from locstat.data_structures.config import ClocConfig
 from locstat.data_structures.typing import FileParsingFunction
 
-__all__ = ("parse_directory",
-           "parse_directory_record",
-           "parse_directory_verbose")
+__all__ = ("parse_directory", "parse_directory_record", "parse_directory_verbose")
+
 
 def parse_directory(
-        directory_data: Iterator[os.DirEntry[str]],
-        config: ClocConfig,
-        line_data: array,
-        depth: int,
-        file_parsing_function: FileParsingFunction,
-        file_filter_function: Callable[[str, str], bool] = lambda filename, extension: True,
-        directory_filter_function: Callable = lambda _ : False,
-        minimum_characters: int = 0) -> None:
-    '''
+    directory_data: Iterator[os.DirEntry[str]],
+    config: ClocConfig,
+    line_data: array,
+    depth: int,
+    file_parsing_function: FileParsingFunction,
+    file_filter_function: Callable[[str, str], bool] = lambda filename, extension: True,
+    directory_filter_function: Callable = lambda _: False,
+    minimum_characters: int = 0,
+) -> None:
+    """
     Parse directory and calculate LOC and total lines
-    
+
     :param directory_data: Iterator over top directory
     :type directory_data: Iterator[os.DirEntry[str]]
 
@@ -41,27 +41,30 @@ def parse_directory(
 
     :param minimum_characters: Minimum characters per line for it to be counted as a line of code
     :type minimum_characters: int
-    
+
     :param depth: Sub-directory traversal depth
     :type depth: int
 
     :return: Passed line_data array is updated
     :rtype: NoneType
-    '''
+    """
     for dir_entry in directory_data:
-        if dir_entry.is_symlink(): continue
+        if dir_entry.is_symlink():
+            continue
         if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
                 continue
 
-            singleLine, multi_start, multi_end = config.symbol_mapping.get(extension, (None, None, None))
+            singleLine, multi_start, multi_end = config.symbol_mapping.get(
+                extension, (None, None, None)
+            )
             if not (singleLine or multi_start):
                 continue
-            
-            tl, l = file_parsing_function(dir_entry.path,
-                                          singleLine, multi_start, multi_end,
-                                          minimum_characters)
+
+            tl, l = file_parsing_function(
+                dir_entry.path, singleLine, multi_start, multi_end, minimum_characters
+            )
             line_data[0] += tl
             line_data[1] += l
             continue
@@ -70,25 +73,32 @@ def parse_directory(
             return
         if not directory_filter_function(dir_entry.path):
             continue
-        parse_directory(os.scandir(dir_entry.path), config,
-                        line_data,
-                        depth-1,
-                        file_parsing_function, file_filter_function, directory_filter_function,
-                        minimum_characters)
+        parse_directory(
+            os.scandir(dir_entry.path),
+            config,
+            line_data,
+            depth - 1,
+            file_parsing_function,
+            file_filter_function,
+            directory_filter_function,
+            minimum_characters,
+        )
+
 
 def parse_directory_record(
-        directory_data: Iterator[os.DirEntry[str]],
-        config: ClocConfig,
-        line_data: array,
-        language_record: dict[str, dict[str, int]],
-        depth: int,
-        file_parsing_function: FileParsingFunction,
-        file_filter_function: Callable[[str, str], bool] = lambda filename, extension: True,
-        directory_filter_function: Callable = lambda _ : False,
-        minimum_characters: int = 0) -> None:
-    '''
+    directory_data: Iterator[os.DirEntry[str]],
+    config: ClocConfig,
+    line_data: array,
+    language_record: dict[str, dict[str, int]],
+    depth: int,
+    file_parsing_function: FileParsingFunction,
+    file_filter_function: Callable[[str, str], bool] = lambda filename, extension: True,
+    directory_filter_function: Callable = lambda _: False,
+    minimum_characters: int = 0,
+) -> None:
+    """
     Parse directory and calculate LOC and total lines, aggregating by file extensions as well
-    
+
     :param directory_data: Iterator over top directory
     :type directory_data: Iterator[os.DirEntry[str]]
 
@@ -112,28 +122,31 @@ def parse_directory_record(
 
     :param minimum_characters: Minimum characters per line for it to be counted as a line of code
     :type minimum_characters: int
-    
+
     :param depth: Sub-directory traversal depth
     :type depth: int
 
     :return: Passed line_data array is updated
     :rtype: NoneType
-    '''
+    """
     for dir_entry in directory_data:
-        if dir_entry.is_symlink(): continue
+        if dir_entry.is_symlink():
+            continue
         if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
                 continue
 
-            singleLine, multi_start, multi_end = config.symbol_mapping.get(extension, (None, None, None))
+            singleLine, multi_start, multi_end = config.symbol_mapping.get(
+                extension, (None, None, None)
+            )
             if not (singleLine or multi_start):
                 continue
 
-            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
-            tl, l = file_parsing_function(dir_entry.path,
-                                          singleLine, multi_start, multi_end,
-                                          minimum_characters)
+            language_record.setdefault(extension, {"total": 0, "loc": 0, "files": 0})
+            tl, l = file_parsing_function(
+                dir_entry.path, singleLine, multi_start, multi_end, minimum_characters
+            )
             line_data[0] += tl
             line_data[1] += l
             language_record[extension]["total"] += tl
@@ -143,14 +156,21 @@ def parse_directory_record(
 
         if not depth:
             return
-        
+
         if not directory_filter_function(dir_entry.path):
             continue
-        parse_directory_record(os.scandir(dir_entry.path), config,
-                               line_data, language_record,
-                               depth-1,
-                               file_parsing_function, file_filter_function, directory_filter_function,
-                               minimum_characters)
+        parse_directory_record(
+            os.scandir(dir_entry.path),
+            config,
+            line_data,
+            language_record,
+            depth - 1,
+            file_parsing_function,
+            file_filter_function,
+            directory_filter_function,
+            minimum_characters,
+        )
+
 
 def parse_directory_verbose(
     directory_data: Iterator[os.DirEntry[str]],
@@ -158,15 +178,15 @@ def parse_directory_verbose(
     language_record: dict[str, dict[str, int]],
     depth: int,
     file_parsing_function: FileParsingFunction,
-    file_filter_function: Callable[[str, str], bool] = lambda filename, extension : True,
+    file_filter_function: Callable[[str, str], bool] = lambda filename, extension: True,
     directory_filter_function: Callable = lambda _: False,
     minimum_characters: int = 0,
     *,
     output_mapping: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
-    '''
+    """
     Parse directory and include aggregate data for all children files and subdirectories
-    
+
     :param directory_data: Iterator over top directory
     :type directory_data: Iterator[os.DirEntry[str]]
 
@@ -197,7 +217,7 @@ def parse_directory_verbose(
 
     :return: Mapping of LOC and line information
     :rtype: dict[str, Any]
-    '''
+    """
 
     if output_mapping is None:
         output_mapping = {}
@@ -207,7 +227,8 @@ def parse_directory_verbose(
     subdirectories: dict[str, Any] = {}
 
     for dir_entry in directory_data:
-        if dir_entry.is_symlink(): continue
+        if dir_entry.is_symlink():
+            continue
         if dir_entry.is_file(follow_symlinks=False):
             extension = dir_entry.name.rsplit(".", 1)[-1]
             if not file_filter_function(dir_entry.path, extension):
@@ -219,7 +240,7 @@ def parse_directory_verbose(
 
             if not (single or multi_end):
                 continue
-            language_record.setdefault(extension, {"total" : 0, "loc" : 0, "files" : 0})
+            language_record.setdefault(extension, {"total": 0, "loc": 0, "files": 0})
 
             file_total, file_loc = file_parsing_function(
                 dir_entry.path,
@@ -241,29 +262,30 @@ def parse_directory_verbose(
                 "total_lines": file_total,
             }
 
-        elif (depth
-              and dir_entry.is_dir()
-              and directory_filter_function(dir_entry.path)):
+        elif depth and dir_entry.is_dir() and directory_filter_function(dir_entry.path):
             with os.scandir(dir_entry.path) as directory_iterator:
                 child = parse_directory_verbose(
                     directory_iterator,
                     config,
                     language_record,
-                    depth-1,
+                    depth - 1,
                     file_parsing_function,
                     file_filter_function,
                     directory_filter_function,
-                    minimum_characters)
+                    minimum_characters,
+                )
 
             subdirectories[dir_entry.name] = child
             directory_total += child["total"]
             directory_loc += child["loc"]
 
-    output_mapping.update({
-        "files": files,
-        "subdirectories": subdirectories,
-        "total": directory_total,
-        "loc": directory_loc,
-    })
+    output_mapping.update(
+        {
+            "files": files,
+            "subdirectories": subdirectories,
+            "total": directory_total,
+            "loc": directory_loc,
+        }
+    )
 
     return output_mapping
