@@ -24,6 +24,7 @@ class ClocConfig(metaclass=SingletonMeta):
     minimum_characters: int = 0
     max_depth: int = -1
     parsing_mode: ParseMode = ParseMode.BUFFERED
+    archive_filename: str = field(default="settings.archive.toml")
 
     # Language metadata
     symbol_mapping: MappingProxyType[str, LanguageMetadata]
@@ -59,7 +60,9 @@ class ClocConfig(metaclass=SingletonMeta):
                 tomllib.loads(configurations.read())
             )
         instance: ClocConfig = cls()
+
         object.__setattr__(instance, "config_file", config_file)
+        object.__setattr__(instance, "archive_filename", "config.archive.toml")
 
         additional_kwargs: dict[str, Any] = {}
         for tag, attr in config_dict.items():
@@ -166,6 +169,15 @@ class ClocConfig(metaclass=SingletonMeta):
                         )
                     )
                 )
+
+        # Persist original configurations to archive file
+        archive_filepath: Path = Path(self.config_file).parent / self.archive_filename
+        if not archive_filepath.is_file():
+            archive_filepath.write_text(
+                data=ClocConfig.config_default_toml_dumps(self.configurations),
+                encoding="utf-8",
+            )
+
         setattr(self, configuration, value)
         with open(self.config_file, "w") as config_file:
             config_file.write(ClocConfig.config_default_toml_dumps(self.configurations))
