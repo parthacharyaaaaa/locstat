@@ -23,7 +23,7 @@ classifiers = [
 keywords = ["locstat", "py-locstat", "loc", "cloc", "parsing", "py-cloc", "pycloc"]
 
 [project.optional-dependencies]
-dev = ["pytest", "build"]
+dev = ["pytest", "build", "pre-commit"]
 
 [project.urls]
 Repository = "https://github.com/parthacharyaaaaa/locstat"
