@@ -132,6 +132,14 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
         nargs="*",
         type=partial(_validate_config_args, config),
     )
+
+    required_group.add_argument(
+        "-rc",
+        "--restore-config",
+        help="Restore configurations to defaults",
+        action="store_true",
+    )
+
     # Target
     required_group.add_argument(
         "-d",

@@ -1,10 +1,11 @@
-from enum import StrEnum
 import json
 import tomllib
 from dataclasses import dataclass, field
+from importlib.metadata import metadata
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Final, Mapping
+from typing import Any, Mapping
+import requests
 
 from locstat.data_structures.exceptions import InvalidConfigurationException
 from locstat.data_structures.singleton import SingletonMeta
@@ -181,3 +182,80 @@ class ClocConfig(metaclass=SingletonMeta):
         setattr(self, configuration, value)
         with open(self.config_file, "w") as config_file:
             config_file.write(ClocConfig.config_default_toml_dumps(self.configurations))
+
+    def restore_configuration(self) -> None:
+        config_filepath: Path = Path(self.config_file)
+        archive_filepath: Path = config_filepath.parent / self.archive_filename
+        if archive_filepath.is_file():
+            try:
+                archived_config: ClocConfig = ClocConfig.load_toml(archive_filepath)
+            except tomllib.TOMLDecodeError:
+                print("[ERROR] Archive file does not contain valid TOML")
+                raise
+
+            config_filepath.write_text(
+                data=ClocConfig.config_default_toml_dumps(
+                    archived_config.configurations
+                ),
+                encoding="utf-8",
+            )
+            print(f"[INFO] Restored file {config_filepath}")
+            return
+
+        # No local archive, attempt to fetch using git repository
+        print(
+            ", ".join(
+                (
+                    f"[INFO] No local archive file found (looked for {archive_filepath})",
+                    "Attempting to reconcile using package's source repository",
+                )
+            )
+        )
+
+        assert __package__
+        repository_url_metadata: str = metadata(__package__.split(".")[0])[
+            "Project-URL"
+        ]
+        if not repository_url_metadata:
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Failed to reconcile with source repository",
+                        "this may be a broken/corrupted installation",
+                    )
+                )
+            )
+            return
+
+        repository_url: str = repository_url_metadata.split(",")[1].strip()
+        repository_url = "/".join(
+            (
+                repository_url.replace("github", "raw.githubusercontent"),
+                "/main/locstat/config.toml",
+            )
+        )
+        try:
+            contents: str = requests.get(repository_url).text
+        except requests.RequestException:
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Failed to reconcile with source repository",
+                        "Network error",
+                    )
+                )
+            )
+            return
+
+        archive_filepath.write_text(data=contents, encoding="utf-8")
+        config_filepath.write_text(data=contents, encoding="utf-8")
+
+        print(
+            ", ".join(
+                (
+                    f"[INFO] Restored file {config_filepath}",
+                    f"created archive {archive_filepath}",
+                    "through repository reconciliation",
+                )
+            )
+        )
