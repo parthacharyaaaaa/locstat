@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
-    
+
     steps:
       - uses: actions/checkout@v5
 
@@ -52,11 +52,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Build Python
-        run: | 
+        run: |
           python3 -m pip install --upgrade pip
           pip install build pytest
           pip install -e . --force-reinstall
-      
+
       - run: pytest -s
 
   build-wheels:
@@ -69,10 +69,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-22.04-arm, windows-latest, windows-11-arm, macos-14]
-    
+
     steps:
       - uses: actions/checkout@v5
-      
+
       - name: Run cibuildwheels
         uses: pypa/cibuildwheel@v3.3.1
         with:
@@ -100,7 +100,7 @@ jobs:
         with:
           name: sdist
           path: ${{ runner.temp }}/wheelhouse
-  
+
   publish:
     name: (pypa gh actions) Publish release to Pypi
     runs-on: ubuntu-latest
