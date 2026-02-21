@@ -1,3 +1,4 @@
+import io
 import json
 import tomllib
 from dataclasses import dataclass, field
@@ -5,7 +6,7 @@ from importlib.metadata import metadata
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping
-import requests
+from urllib import error, request
 
 from locstat.data_structures.exceptions import InvalidConfigurationException
 from locstat.data_structures.singleton import SingletonMeta
@@ -235,8 +236,19 @@ class ClocConfig(metaclass=SingletonMeta):
             )
         )
         try:
-            contents: str = requests.get(repository_url).text
-        except requests.RequestException:
+            response: Any = request.urlopen(repository_url)
+            file_reader: Any = getattr(response, "fp", None)
+            if not (file_reader and isinstance(file_reader, io.BufferedReader)):
+                print(
+                    ", ".join(
+                        (
+                            "[ERROR] Failed to reconcile with source repository",
+                            "missing file",
+                        )
+                    )
+                )
+                return
+        except error.HTTPError:
             print(
                 ", ".join(
                     (
@@ -247,6 +259,7 @@ class ClocConfig(metaclass=SingletonMeta):
             )
             return
 
+        contents: str = file_reader.read().decode("utf-8")
         archive_filepath.write_text(data=contents, encoding="utf-8")
         config_filepath.write_text(data=contents, encoding="utf-8")
 
