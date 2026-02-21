@@ -86,9 +86,10 @@ def _validate_config_args(config: ClocConfig, arg: str, /, copy: list[str] = [])
         sys.stdout.write(
             " ".join(
                 (
-                    f"No such configurable option: {arg}.",
-                    "Available configurations:",
+                    f"No such configurable option: {arg}.\n",
+                    "Available configurations:\n",
                     ", ".join(config.configurable),
+                    "\n",
                 )
             )
         )
