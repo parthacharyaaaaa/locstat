@@ -1,13 +1,16 @@
 import argparse
 from functools import partial
+import json
 import os
 import sys
-from typing import Final, Sequence
+from types import NoneType
+from typing import Any, Final, Optional, Sequence
 
 from locstat import __tool_name__
 from locstat.data_structures.config import ClocConfig
 from locstat.data_structures.parse_modes import ParseMode
 from locstat.data_structures.verbosity import Verbosity
+from locstat.data_structures.typing import LanguageMetadata
 from locstat.utilities.presentation import OUTPUT_MAPPING, dump_std_output
 
 __all__ = ("initialize_parser", "parse_arguments")
@@ -95,6 +98,40 @@ def _validate_config_args(config: ClocConfig, arg: str, /, copy: list[str] = [])
     return arg
 
 
+def _process_langauge_metadata_filepath(config: ClocConfig, arg: str) -> str:
+    if not arg.endswith(".json"):
+        sys.stdout.write("Language metadata file must have JSON extension")
+        sys.exit(1)
+
+    if not os.path.isfile(arg):
+        sys.stdout.write(f"Language metadata filepath {arg} not found")
+        sys.exit(1)
+
+    with open(arg, "r") as language_metadata_file:
+        language_metadata: dict[str, Any] = json.load(language_metadata_file)
+        for language, comment_symbols in language_metadata.items():
+            if not (
+                isinstance(comment_symbols, list)
+                and len(comment_symbols) == 3
+                and all(isinstance(s, (str, NoneType)) for s in comment_symbols)
+            ):
+                sys.stdout.write(
+                    ", ".join(
+                        (
+                            f"Invalid comment metadata for extension {language}",
+                            "comment symbols must be a list of 3 strings/null",
+                            'example: ["#", null, null] for Python',
+                        )
+                    )
+                )
+                sys.stdout.write(f"\nFailed at: {comment_symbols}")
+                sys.exit(1)
+            language_metadata[language] = tuple(comment_symbols)
+
+        config.update_languages_metadata(language_metadata)
+        return arg
+
+
 def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
     """Instantiate and return an argument parser
 
@@ -167,6 +204,24 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
             )
         ),
         default=config.minimum_characters,
+    )
+
+    parser.add_argument(
+        "-lm",
+        "--language-metadata",
+        type=partial(
+            _process_langauge_metadata_filepath, config
+        ),  # kinda hacky, but we move
+        help=" ".join(
+            (
+                "Specify JSON file to supply",
+                "additional comment data for languages."
+                "This file is read and used in",
+                "addition to the default language metadata file,",
+                "overwriting any overlapping entries",
+            )
+        ),
+        default={},
     )
 
     # Directory parsing logic
@@ -289,6 +344,5 @@ def parse_arguments(
         (parsed_arguments.config[i], parsed_arguments.config[i + 1])
         for i in range(0, configurations_args_length - 1, 2)
     ]
-    # TODO: Add additional mutual exclusion logic
 
     return parsed_arguments

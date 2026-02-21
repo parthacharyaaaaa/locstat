@@ -330,3 +330,10 @@ class ClocConfig(metaclass=SingletonMeta):
                 )
             )
         )
+
+    def update_languages_metadata(self, metadata: dict[str, LanguageMetadata]) -> None:
+        object.__setattr__(
+            self,
+            "symbol_mapping",
+            MappingProxyType(dict(self.symbol_mapping) | metadata),
+        )
