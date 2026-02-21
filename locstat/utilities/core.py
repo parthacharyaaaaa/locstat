@@ -1,4 +1,4 @@
-from typing import Callable, Literal, Optional
+from typing import Callable, Optional
 
 from locstat.data_structures.parse_modes import ParseMode
 from locstat.data_structures.typing import SupportsMembershipChecks, FileParsingFunction

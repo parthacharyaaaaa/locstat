@@ -4,13 +4,12 @@ import json
 import os
 import sys
 from types import NoneType
-from typing import Any, Final, Optional, Sequence
+from typing import Any, Final, Sequence
 
 from locstat import __tool_name__
 from locstat.data_structures.config import ClocConfig
 from locstat.data_structures.parse_modes import ParseMode
 from locstat.data_structures.verbosity import Verbosity
-from locstat.data_structures.typing import LanguageMetadata
 from locstat.utilities.presentation import OUTPUT_MAPPING, dump_std_output
 
 __all__ = ("initialize_parser", "parse_arguments")

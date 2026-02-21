@@ -6,7 +6,7 @@ import time
 from array import array
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Final, Literal, NoReturn, Union
+from typing import Any, Callable, Final, NoReturn, Union
 
 from locstat.argparser import initialize_parser, parse_arguments
 from locstat import __version__, __tool_name__
