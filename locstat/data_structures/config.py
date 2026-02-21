@@ -31,7 +31,6 @@ class ClocConfig(metaclass=SingletonMeta):
 
     # Language metadata
     symbol_mapping: MappingProxyType[str, LanguageMetadata]
-    ignored_languages: set[str]
 
     config_file: str
 
@@ -96,10 +95,6 @@ class ClocConfig(metaclass=SingletonMeta):
         # Load data about comment symbols
         with open(working_directory / "languages.json", "rb") as langauges_source:
             languages_data = json.loads(langauges_source.read())
-
-        object.__setattr__(
-            instance, "ignored_languages", set(languages_data.pop("ignore"))
-        )
 
         comments_data: dict[str, list[str]] = languages_data.pop("comments")
         symbol_mapping: dict[str, LanguageMetadata] = {}
