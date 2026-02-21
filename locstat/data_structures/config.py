@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from importlib.metadata import metadata
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 from urllib import error, request
 
 from locstat.data_structures.exceptions import InvalidConfigurationException
@@ -214,9 +214,9 @@ class ClocConfig(metaclass=SingletonMeta):
         )
 
         assert __package__
-        repository_url_metadata: str = metadata(__package__.split(".")[0])[
-            "Project-URL"
-        ]
+        package_metadata = metadata(__package__.split(".")[0])
+        repository_url_metadata: str = package_metadata["Project-URL"]
+
         if not repository_url_metadata:
             print(
                 ", ".join(
@@ -229,10 +229,28 @@ class ClocConfig(metaclass=SingletonMeta):
             return
 
         repository_url: str = repository_url_metadata.split(",")[1].strip()
+        git_ref: Optional[str] = package_metadata["version"]
+        if not git_ref:
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Broken installation: No version metadata found for this package!",
+                        "will reconcile using latest version.",
+                    )
+                )
+            )
+            print(
+                f"[INFO] Please reinstall {package_metadata['name']} from PyPi to avoid such errors"
+            )
+
+            git_ref = "main"
+        else:
+            git_ref = "v" + git_ref
+
         repository_url = "/".join(
             (
                 repository_url.replace("github", "raw.githubusercontent"),
-                "/main/locstat/config.toml",
+                f"{git_ref}/locstat/config.toml",
             )
         )
         try:
@@ -248,7 +266,8 @@ class ClocConfig(metaclass=SingletonMeta):
                     )
                 )
                 return
-        except error.HTTPError:
+        except error.HTTPError as e:
+            print(e)
             print(
                 ", ".join(
                     (
