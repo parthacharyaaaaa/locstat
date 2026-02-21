@@ -68,6 +68,8 @@ Note: These options are **mutually exclusive**
 
 3) **COMP**: Read the entire file at once without any buffering.
 
+---
+
 **-vb/--verbosity**: Amount of statistics to include in the final report. Available modes:
 
 1) **BARE**: Default mode, count only total lines and lines of code.
@@ -76,9 +78,17 @@ Note: These options are **mutually exclusive**
 
 3) **DETAILED**: Additionally include language metadata and per directory and per file line statistics.
 
+---
+
 **-md/--max-depth**: Recursively scan sub-directories upto the given level. Negative values are treated as infinite depth. Defaults to -1
 
 **-mc/--min-chars**: Specify the minimum number of non-whitespace characters a line should have to be considered an LOC. Defaults to 1.
+
+**-clm/--copy-language-metadata**: Copy language metadata to a specified file, used as a precursor to using custom language metadata.
+
+**-lm/--language-metadata**: Specify JSON file to supply additional comment data for languages. This file is read and used instead of the default language metadata file.
+
+**-rc/--restore-config**: Resore configuration file to default its state.
 
 ### Emitting Results
 ---
@@ -148,19 +158,42 @@ Furthermore, changes to default values can be saved permanently using the `--con
 
 When invoked without any arguments, `--config` displays the current default configurations for locstat.
 
+#### changelog v1.1.0
+* Configuration settings can be restored to their default state using `--restore-config` (shorthand: `-rc`)
+
+`locstat 1.2.0` introduces a new customization: language metadata
+
+By default, locstat uses a flat `languages.json` file to infer data about comment symbols. This file is shipped as part of locstat releases and meant to be **read-only**.
+
+However, to allow for customizations, locstat introduces 2 commands.
+
+**Example**
 ```bash
+$ locstat --copy-language-metadata foo.json
+$ locstat -f bar.py --language-metadata foo.json
+GENERAL:
+loc : 4
+total : 5
+time : 0.000s
+scanned_at : 21/02/26, at 16:24:19
+platform : Linux
+
+$ locstat --config language_metadata_path foo.json
 $ locstat --config
+language_metadata_path : foo.json
 max_depth : -1
 minimum_characters : 1
 parsing_mode : BUF
 verbosity : BARE
 ```
+Now, changes can be made to `foo.json`, and locstat would always use this file as a symbol reference. Of course, these changes can be reverted through `--restore-config`
 
 To update any value, append the flag with the option name and it's new value as a space-separated pair.
 
 ```bash
 $ locstat --config max_depth 5 parsing_mode MMAP verbosity report
 $ locstat --config
+language_metadata_path :
 max_depth : 5
 minimum_characters : 1
 parsing_mode : MMAP
