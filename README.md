@@ -33,7 +33,9 @@ $ locstat [-h] (-v VERSION | -c CONFIG | -f FILE | -d DIR) [options]
 A primary action must be specified when invoking the tool through the command line, namely:
 * **-v/--version**: Display the installed version and exit
 * **-h/--help**: Display the help message and exit
+
 * **-c/--config**: Display and optionally edit the configuration settings and exit
+* **-rc/--restore-config**: Restore configuration settings
 
 * **-f/--file**: Filepath to parse
 * **-d/--dir**: Directory to parse
