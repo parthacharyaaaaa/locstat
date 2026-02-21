@@ -2,7 +2,7 @@ import json
 import os
 from io import TextIOWrapper
 from types import MappingProxyType
-from typing import Any, Final, Literal, Optional, Sequence, Union
+from typing import Any, Final, Optional, Sequence, Union
 
 from locstat.data_structures.typing import OutputFunction
 

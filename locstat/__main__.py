@@ -6,7 +6,7 @@ import time
 from array import array
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Final, Literal, NoReturn, Union
+from typing import Any, Callable, Final, NoReturn, Union
 
 from locstat.argparser import initialize_parser, parse_arguments
 from locstat import __version__, __tool_name__
@@ -45,6 +45,10 @@ def main() -> int:
 
     if args.restore_config:
         config.restore_configuration()
+        return 0
+
+    if args.copy_language_metadata:
+        config.write_language_metadata(Path(args.copy_language_metadata))
         return 0
 
     # Because of nargs="*" in argparser's config argument,

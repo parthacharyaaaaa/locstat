@@ -1,5 +1,5 @@
 import os
-from typing import Any, Literal, Optional, Protocol, TypeAlias, TypeVar, Union
+from typing import Any, Optional, Protocol, TypeAlias, TypeVar, Union
 
 __all__ = (
     "LanguageMetadata",

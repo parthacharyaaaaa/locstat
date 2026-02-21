@@ -20,9 +20,22 @@ jobs:
           src: "./locstat"
           version: "26.1.0"
 
+  flake:
+    runs-on: ubuntu-latest
+    name: (Autoflake) Remove unused imports
+    needs: style
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: creyD/autoflake_action@v1.1
+        with:
+          checkpath: ./locstat
+          options: --check --remove-all-unused-imports --ignore-init-module-imports -r -v
+          no-commit: true
+
   test:
     runs-on: ubuntu-latest
-    needs: style
+    needs: flake
 
     strategy:
       fail-fast: false
