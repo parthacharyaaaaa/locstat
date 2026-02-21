@@ -86,9 +86,10 @@ def _validate_config_args(config: ClocConfig, arg: str, /, copy: list[str] = [])
         sys.stdout.write(
             " ".join(
                 (
-                    f"No such configurable option: {arg}.",
-                    "Available configurations:",
+                    f"No such configurable option: {arg}.\n",
+                    "Available configurations:\n",
                     ", ".join(config.configurable),
+                    "\n",
                 )
             )
         )
@@ -119,13 +120,12 @@ def _process_langauge_metadata_filepath(config: ClocConfig, arg: str) -> str:
                         (
                             f"Invalid comment metadata for extension {language}",
                             "comment symbols must be a list of 3 strings/null",
-                            'example: ["#", null, null] for Python',
+                            'example: ["#", null, null] for Python\n',
                         )
                     )
                 )
-                sys.stdout.write(f"\nFailed at: {comment_symbols}")
+                sys.stdout.write(f"Failed at: {comment_symbols}\n")
                 sys.exit(1)
-            language_metadata[language] = tuple(comment_symbols)
 
         config.update_languages_metadata(language_metadata)
         return arg
