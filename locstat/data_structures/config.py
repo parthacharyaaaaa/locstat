@@ -105,9 +105,8 @@ class ClocConfig(metaclass=SingletonMeta):
             else working_directory / "languages.json"
         )
         with open(languages_filepath, "rb") as langauges_source:
-            languages_data = json.loads(langauges_source.read())
+            comments_data: dict[str, list[str]] = json.loads(langauges_source.read())
 
-        comments_data: dict[str, list[str]] = languages_data.pop("comments")
         symbol_mapping: dict[str, LanguageMetadata] = {}
         for language, comment_data in comments_data.items():
             if len(comment_data) != 3:
