@@ -47,6 +47,10 @@ def main() -> int:
         config.restore_configuration()
         return 0
 
+    if args.copy_language_metadata:
+        config.write_language_metadata(Path(args.copy_language_metadata))
+        return 0
+
     # Because of nargs="*" in argparser's config argument,
     # the only way to determine whether --config was passed
     # is by negation of remaining args in the same mutually exclusive group

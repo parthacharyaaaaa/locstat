@@ -177,6 +177,12 @@ def initialize_parser(config: ClocConfig) -> argparse.ArgumentParser:
         action="store_true",
     )
 
+    required_group.add_argument(
+        "-clm",
+        "--copy-language-metadata",
+        help="Copy language metadata to a specified file",
+    )
+
     # Target
     required_group.add_argument(
         "-d",

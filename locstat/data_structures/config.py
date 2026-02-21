@@ -337,3 +337,7 @@ class ClocConfig(metaclass=SingletonMeta):
             "symbol_mapping",
             MappingProxyType(dict(self.symbol_mapping) | metadata),
         )
+
+    def write_language_metadata(self, filepath: Path) -> None:
+        with open(self.working_directory / "languages.json", "r") as src:
+            filepath.write_text(src.read())
