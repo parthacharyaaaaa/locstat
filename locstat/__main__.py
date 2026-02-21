@@ -43,6 +43,10 @@ def main() -> int:
         print(f"{__tool_name__} {__version__}")
         return 0
 
+    if args.restore_config:
+        config.restore_configuration()
+        return 0
+
     # Because of nargs="*" in argparser's config argument,
     # the only way to determine whether --config was passed
     # is by negation of remaining args in the same mutually exclusive group

@@ -1,10 +1,13 @@
-from enum import StrEnum
+import io
 import json
 import tomllib
 from dataclasses import dataclass, field
+from importlib.metadata import metadata
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Final, Mapping
+from typing import Any, Mapping, Optional
+from urllib import error, request
+from uuid import uuid4
 
 from locstat.data_structures.exceptions import InvalidConfigurationException
 from locstat.data_structures.singleton import SingletonMeta
@@ -24,6 +27,7 @@ class ClocConfig(metaclass=SingletonMeta):
     minimum_characters: int = 0
     max_depth: int = -1
     parsing_mode: ParseMode = ParseMode.BUFFERED
+    archive_filename: str = field(default="settings.archive.toml")
 
     # Language metadata
     symbol_mapping: MappingProxyType[str, LanguageMetadata]
@@ -59,7 +63,9 @@ class ClocConfig(metaclass=SingletonMeta):
                 tomllib.loads(configurations.read())
             )
         instance: ClocConfig = cls()
+
         object.__setattr__(instance, "config_file", config_file)
+        object.__setattr__(instance, "archive_filename", "config.archive.toml")
 
         additional_kwargs: dict[str, Any] = {}
         for tag, attr in config_dict.items():
@@ -166,6 +172,161 @@ class ClocConfig(metaclass=SingletonMeta):
                         )
                     )
                 )
+
+        # Persist original configurations to archive file
+        archive_filepath: Path = Path(self.config_file).parent / self.archive_filename
+        if not archive_filepath.is_file():
+            archive_filepath.write_text(
+                data=ClocConfig.config_default_toml_dumps(self.configurations),
+                encoding="utf-8",
+            )
+
         setattr(self, configuration, value)
         with open(self.config_file, "w") as config_file:
             config_file.write(ClocConfig.config_default_toml_dumps(self.configurations))
+
+    def restore_configuration(self) -> None:
+        config_filepath: Path = Path(self.config_file)
+        archive_filepath: Path = config_filepath.parent / self.archive_filename
+        if archive_filepath.is_file():
+            try:
+                archived_config: ClocConfig = ClocConfig.load_toml(archive_filepath)
+            except tomllib.TOMLDecodeError:
+                print("[ERROR] Archive file does not contain valid TOML")
+                raise
+
+            config_filepath.write_text(
+                data=ClocConfig.config_default_toml_dumps(
+                    archived_config.configurations
+                ),
+                encoding="utf-8",
+            )
+            print(f"[INFO] Restored file {config_filepath}")
+            return
+
+        # No local archive, attempt to fetch using git repository
+        print(
+            ", ".join(
+                (
+                    f"[INFO] No local archive file found (looked for {archive_filepath})",
+                    "Attempting to reconcile using package's source repository",
+                )
+            )
+        )
+
+        assert __package__
+        package_metadata = metadata(__package__.split(".")[0])
+        repository_url_metadata: str = package_metadata["Project-URL"]
+
+        if not repository_url_metadata:
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Failed to reconcile with source repository",
+                        "this may be a broken/corrupted installation",
+                    )
+                )
+            )
+            return
+
+        repository_url: str = repository_url_metadata.split(",")[1].strip()
+        git_ref: Optional[str] = package_metadata["version"]
+        if not git_ref:
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Broken installation: No version metadata found for this package!",
+                        "will reconcile using latest version.",
+                    )
+                )
+            )
+            print(
+                f"[INFO] Please reinstall {package_metadata['name']} from PyPi to avoid such errors"
+            )
+
+            git_ref = "main"
+        else:
+            git_ref = "v" + git_ref
+
+        git_ref = "main"
+        repository_url = "/".join(
+            (
+                repository_url.replace("github", "raw.githubusercontent"),
+                f"{git_ref}/locstat/config.toml",
+            )
+        )
+        try:
+            response: Any = request.urlopen(repository_url)
+            file_reader: Any = getattr(response, "fp", None)
+            if not (file_reader and isinstance(file_reader, io.BufferedReader)):
+                print(
+                    ", ".join(
+                        (
+                            "[ERROR] Failed to reconcile with source repository",
+                            "missing file",
+                        )
+                    )
+                )
+                return
+        except error.HTTPError as e:
+            print(e)
+            print(
+                ", ".join(
+                    (
+                        "[ERROR] Failed to reconcile with source repository",
+                        "Network error",
+                    )
+                )
+            )
+            return
+
+        contents: str = file_reader.read().decode("utf-8")
+
+        if git_ref == "main":
+            # Addtional parsing is required to trim any addiitonal configurations
+            # or handle any incompatible values from the latest stable version
+            temp_filepath: Path = config_filepath.parent / f"temp_{uuid4().hex}.toml"
+            temp_filepath.write_text(contents, encoding="utf-8")
+            try:
+                config: ClocConfig = ClocConfig.load_toml(temp_filepath)
+            except InvalidConfigurationException:
+                print(
+                    ", ".join(
+                        (
+                            "[ERROR] Failed to reconcile with the latest stable version",
+                            f"at: {repository_url}",
+                        )
+                    )
+                )
+                return
+            finally:
+                temp_filepath.unlink()
+
+            if config.additional_kwargs:
+                message_string: str = ", ".join(
+                    (f"{k}:{v}" for k, v in config.additional_kwargs.items())
+                )
+                print(
+                    ", ".join(
+                        (
+                            "[INFO] Additional configuration paramaters found",
+                            f"paramaters: {message_string}",
+                            "ignored",
+                        )
+                    )
+                )
+
+            contents = ClocConfig.config_default_toml_dumps(config.configurations)
+
+        archive_filepath.write_text(data=contents, encoding="utf-8")
+        config_filepath.write_text(data=contents, encoding="utf-8")
+
+        print(
+            ", ".join(
+                (
+                    f"[INFO] Restored file {config_filepath}",
+                    f"created archive {archive_filepath}",
+                    "through repository reconciliation",
+                )
+            )
+        )
