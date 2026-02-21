@@ -31,15 +31,21 @@ class ClocConfig(metaclass=SingletonMeta):
 
     # Language metadata
     symbol_mapping: MappingProxyType[str, LanguageMetadata]
-
     config_file: str
+    language_metadata_path: str = ""
 
     additional_kwargs: dict[str, Any] = field(default_factory=dict)
 
     @property
     def configurable(self) -> frozenset[str]:
         return frozenset(
-            ["verbosity", "minimum_characters", "max_depth", "parsing_mode"]
+            [
+                "verbosity",
+                "minimum_characters",
+                "max_depth",
+                "parsing_mode",
+                "language_metadata_path",
+            ]
         )
 
     @staticmethod
@@ -93,7 +99,12 @@ class ClocConfig(metaclass=SingletonMeta):
         object.__setattr__(instance, "working_directory", working_directory)
 
         # Load data about comment symbols
-        with open(working_directory / "languages.json", "rb") as langauges_source:
+        languages_filepath: Path = (
+            Path(instance.language_metadata_path)
+            if instance.language_metadata_path
+            else working_directory / "languages.json"
+        )
+        with open(languages_filepath, "rb") as langauges_source:
             languages_data = json.loads(langauges_source.read())
 
         comments_data: dict[str, list[str]] = languages_data.pop("comments")
