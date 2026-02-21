@@ -28,7 +28,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
             } else {
                 comment_data->multiline_end_pointer = 0;
             }
-            continue; 
+            continue;
         }
 
         if (comment_data->in_singleline) {
@@ -45,7 +45,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
             comment_data->singleline_pointer = 0;
             comment_data->multiline_start_pointer = 0;
             comment_data->multiline_end_pointer = 0;
-            continue;   
+            continue;
         }
 
         if (comment_data->singleline_symbol

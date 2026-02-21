@@ -14,7 +14,7 @@ struct CommentData {
     Py_ssize_t singleline_pointer;
     Py_ssize_t multiline_start_pointer;
     Py_ssize_t multiline_end_pointer;
-    
+
     bool in_singleline, in_multiline;
 };
 

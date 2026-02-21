@@ -182,7 +182,7 @@ This does not mean that locstat is completely incompatible on all remaining syst
 ## Acknowledgements
 locstat (formerly named pycloc, but that name was taken 2 weeks before I got to publishing :P) started as a one-day project to allow a good friend to count how many lines of C++ code were present in his UE5 project.
 
-Since then, many features and improvements have been added to this still simple tool, all of which would have been impossible without the collective effort of thousands of open-source contributors, spanning across many projects such as CPython and Perl Cloc (the gold standard!) to even make programming possible for me. 
+Since then, many features and improvements have been added to this still simple tool, all of which would have been impossible without the collective effort of thousands of open-source contributors, spanning across many projects such as CPython and Perl Cloc (the gold standard!) to even make programming possible for me.
 
 Furthermore, the online help provided by thousands of contributors on StackOverflow, HackerNews and countless personal technical blogs has made it possible for me to polish and refine this tool.
 

@@ -12,7 +12,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     const char *filename,
     *singleline_character,
     *multiline_start_character, *multiline_end_character;
-    
+
     Py_ssize_t singleline_length,
     multiline_start_length,
     multiline_end_length,
@@ -42,8 +42,8 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     if (filesize.QuadPart == 0){
         CloseHandle(file_handle);
         return Py_BuildValue("ii", 0, 0);
-    } 
-    
+    }
+
     const HANDLE mapping_handle = CreateFileMapping(file_handle, NULL, PAGE_READONLY, 0, 0, NULL);
     if (!mapping_handle){
         CloseHandle(file_handle);
@@ -61,7 +61,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
 
     const unsigned char *view = (unsigned char *) mapped_region;
     int total_lines = 0, loc = 0, valid_symbols = 0;
-    
+
     struct CommentData comment_data;
     initialize_comment_data(
         &comment_data,
@@ -95,7 +95,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     const char *filename,
     *singleline_character,
     *multiline_start_character, *multiline_end_character;
-    
+
     Py_ssize_t singleline_length,
     multiline_start_length,
     multiline_end_length,
@@ -137,7 +137,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
 
     const unsigned char *view = (unsigned char *) mapped_region;
     int total_lines = 0, loc = 0, valid_symbols = 0;
-    
+
     struct CommentData comment_data;
     initialize_comment_data(
         &comment_data,
@@ -170,7 +170,7 @@ _parse_file(PyObject *self, PyObject *args){
     const char *filename,
     *singleline_character,
     *multiline_start_character, *multiline_end_character;
-    
+
     Py_ssize_t singleline_length,
     multiline_start_length,
     multiline_end_length,
@@ -214,12 +214,12 @@ _parse_file(PyObject *self, PyObject *args){
         _parse_buffer(buffer, chunk_size, minimum_characters, &valid_symbols, &total_lines, &loc, &comment_data);
     }
     // Files not terminating with newline
-    if (last_byte != '\n' 
+    if (last_byte != '\n'
         && last_byte != uchar_sentinel){
         total_lines++;
         loc += (valid_symbols >= minimum_characters);
     }
-    
+
     free(buffer);
     fclose(file);
     return Py_BuildValue("ii", total_lines, loc);
@@ -230,7 +230,7 @@ _parse_file_no_chunk(PyObject *self, PyObject *args){
     const char *filename,
     *singleline_character,
     *multiline_start_character, *multiline_end_character;
-    
+
     Py_ssize_t singleline_length,
     multiline_start_length,
     multiline_end_length,
@@ -273,7 +273,7 @@ _parse_file_no_chunk(PyObject *self, PyObject *args){
         return NULL;
     }
     fread(buffer, 1, st.st_size, file);
-    
+
     int total_lines = 0, loc = 0, valid_symbols = 0;
     struct CommentData comment_data;
     initialize_comment_data(
