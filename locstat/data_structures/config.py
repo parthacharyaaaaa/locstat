@@ -7,6 +7,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Optional
 from urllib import error, request
+from uuid import uuid4
 
 from locstat.data_structures.exceptions import InvalidConfigurationException
 from locstat.data_structures.singleton import SingletonMeta
@@ -247,6 +248,7 @@ class ClocConfig(metaclass=SingletonMeta):
         else:
             git_ref = "v" + git_ref
 
+        git_ref = "main"
         repository_url = "/".join(
             (
                 repository_url.replace("github", "raw.githubusercontent"),
@@ -279,6 +281,43 @@ class ClocConfig(metaclass=SingletonMeta):
             return
 
         contents: str = file_reader.read().decode("utf-8")
+
+        if git_ref == "main":
+            # Addtional parsing is required to trim any addiitonal configurations
+            # or handle any incompatible values from the latest stable version
+            temp_filepath: Path = config_filepath.parent / f"temp_{uuid4().hex}.toml"
+            temp_filepath.write_text(contents, encoding="utf-8")
+            try:
+                config: ClocConfig = ClocConfig.load_toml(temp_filepath)
+            except InvalidConfigurationException:
+                print(
+                    ", ".join(
+                        (
+                            "[ERROR] Failed to reconcile with the latest stable version",
+                            f"at: {repository_url}",
+                        )
+                    )
+                )
+                return
+            finally:
+                temp_filepath.unlink()
+
+            if config.additional_kwargs:
+                message_string: str = ", ".join(
+                    (f"{k}:{v}" for k, v in config.additional_kwargs.items())
+                )
+                print(
+                    ", ".join(
+                        (
+                            "[INFO] Additional configuration paramaters found",
+                            f"paramaters: {message_string}",
+                            "ignored",
+                        )
+                    )
+                )
+
+            contents = ClocConfig.config_default_toml_dumps(config.configurations)
+
         archive_filepath.write_text(data=contents, encoding="utf-8")
         config_filepath.write_text(data=contents, encoding="utf-8")
 
