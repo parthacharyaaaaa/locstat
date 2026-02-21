@@ -1,1 +1,1 @@
-'''Integrity tests'''
+"""Integrity tests"""

@@ -5,6 +5,7 @@ import pytest
 from locstat.data_structures.verbosity import Verbosity
 from locstat.data_structures.parse_modes import ParseMode
 
+
 @dataclass
 class MockConfig:
     verbosity: Verbosity = field(default=Verbosity.BARE)
@@ -14,12 +15,15 @@ class MockConfig:
 
     @property
     def configurable(self) -> frozenset[str]:
-        return frozenset(["verbosity", "minimum_characters",
-                          "max_depth", "parsing_mode"])
+        return frozenset(
+            ["verbosity", "minimum_characters", "max_depth", "parsing_mode"]
+        )
+
 
 @pytest.fixture
 def mock_config() -> MockConfig:
     return MockConfig()
+
 
 @pytest.fixture
 def mock_dir(tmp_path_factory):

@@ -1,9 +1,11 @@
-'''Unit tests for CLI argument parser'''
+"""Unit tests for CLI argument parser"""
+
 import argparse
 
 from locstat.argparser import initialize_parser, parse_arguments
 
 from tests.fixtures import mock_config, mock_dir
+
 
 def test_exclusive_groups(mock_config, mock_dir) -> None:
     parser: argparse.ArgumentParser = initialize_parser(mock_config)
@@ -11,7 +13,7 @@ def test_exclusive_groups(mock_config, mock_dir) -> None:
     illegal_combinations: tuple[str, ...] = (
         "-it py -xt js",
         "-if foo.py -xf bar.py",
-        "-id foo -xd bar"
+        "-id foo -xd bar",
     )
 
     base_args: str = f"-d {mock_dir}"
@@ -20,11 +22,13 @@ def test_exclusive_groups(mock_config, mock_dir) -> None:
         failed: bool = False
         try:
             parse_arguments(" ".join((base_args, combination)).split(), parser)
-        except SystemExit as se:
+        except SystemExit:
             failed = True
         finally:
-            assert failed, \
-            f"Illegal argument combination '{combination}' accepted by argument parser"
+            assert (
+                failed
+            ), f"Illegal argument combination '{combination}' accepted by argument parser"
+
 
 def test_allowed_combinations(mock_config, mock_dir):
     parser: argparse.ArgumentParser = initialize_parser(mock_config)
@@ -35,7 +39,7 @@ def test_allowed_combinations(mock_config, mock_dir):
         "-if foo.py bar.py",
         "-xf foo.py bar.py",
         "-id foo bar",
-        "-xd foo bar"
+        "-xd foo bar",
     )
 
     base_args: str = f"-d {mock_dir}"
@@ -46,15 +50,18 @@ def test_allowed_combinations(mock_config, mock_dir):
         except SystemExit as e:
             e.add_note(f"Original argument: {base_args + arg}")
             raise e
-        
+
+
 def test_target_existence(mock_config, mock_dir):
     parser: argparse.ArgumentParser = initialize_parser(mock_config)
 
     mock_subdir = mock_dir / "_temp_subdir"
     mock_file = mock_subdir / "_temp_file.py"
 
-    arg_mapping: dict[str, type[BaseException]] = {f"-f {mock_file}" : SystemExit,
-                                         f"-d {mock_subdir}" : SystemExit}
+    arg_mapping: dict[str, type[BaseException]] = {
+        f"-f {mock_file}": SystemExit,
+        f"-d {mock_subdir}": SystemExit,
+    }
 
     for arg, expected_exception in arg_mapping.items():
         failed: bool = False
@@ -62,13 +69,15 @@ def test_target_existence(mock_config, mock_dir):
         try:
             parse_arguments(arg_sequence, parser)
         except SystemExit as e:
-            assert isinstance(e, expected_exception), \
-                " ".join((f"Non-existing target {arg_sequence[-1]} rejected with unexpected error",
-                          f"Expected: {expected_exception}",
-                          f"Raised: {e}"))
+            assert isinstance(e, expected_exception), " ".join(
+                (
+                    f"Non-existing target {arg_sequence[-1]} rejected with unexpected error",
+                    f"Expected: {expected_exception}",
+                    f"Raised: {e}",
+                )
+            )
             failed = True
-        assert failed, \
-        f"Non-existing target {arg_sequence[-1]} accepted"
+        assert failed, f"Non-existing target {arg_sequence[-1]} accepted"
 
     mock_subdir.mkdir()
     mock_file.touch()

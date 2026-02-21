@@ -1,1 +1,1 @@
-'''Testing module for locstat'''
+"""Testing module for locstat"""

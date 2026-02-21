@@ -8,6 +8,7 @@ from locstat.parsing.directory import parse_directory
 from locstat.utilities.core import derive_file_parser
 from locstat.data_structures.parse_modes import ParseMode
 
+
 def _populate_directory(directory: Path) -> None:
     directory.mkdir(parents=True, exist_ok=True)
 
@@ -19,9 +20,7 @@ def _populate_directory(directory: Path) -> None:
     for d in (src, utils, tests, data):
         d.mkdir(parents=True, exist_ok=True)
 
-    (src / "main.py").write_text(
-        textwrap.dedent(
-            """
+    (src / "main.py").write_text(textwrap.dedent("""
             \"\"\"
             Entry point for the application.
             \"\"\"
@@ -38,14 +37,9 @@ def _populate_directory(directory: Path) -> None:
 
             if __name__ == "__main__":
                 main()
-            """
-        ).strip()
-        + "\n"
-    )
+            """).strip() + "\n")
 
-    (utils / "math_utils.py").write_text(
-        textwrap.dedent(
-            """
+    (utils / "math_utils.py").write_text(textwrap.dedent("""
             \"\"\"
             Utility functions for math operations.
             \"\"\"
@@ -63,14 +57,9 @@ def _populate_directory(directory: Path) -> None:
                     The sum of a and b
                 \"\"\"
                 return a + b
-            """
-        ).strip()
-        + "\n"
-    )
+            """).strip() + "\n")
 
-    (tests / "test_math_utils.py").write_text(
-        textwrap.dedent(
-            """
+    (tests / "test_math_utils.py").write_text(textwrap.dedent("""
             import pytest
 
             from src.utils.math_utils import add
@@ -83,14 +72,9 @@ def _populate_directory(directory: Path) -> None:
 
             def test_add_negative_numbers():
                 assert add(-1, -2) == -3
-            """
-        ).strip()
-        + "\n"
-    )
+            """).strip() + "\n")
 
-    (directory / "README.md").write_text(
-        textwrap.dedent(
-            """
+    (directory / "README.md").write_text(textwrap.dedent("""
             # Mock Project
 
             This is a fake project structure used for testing filesystem behavior.
@@ -99,10 +83,7 @@ def _populate_directory(directory: Path) -> None:
             - Python code
             - Nested directories
             - Symlinks
-            """
-        ).strip()
-        + "\n"
-    )
+            """).strip() + "\n")
 
     (data / "sample.txt").write_text(
         "This is a sample data file.\n\nIt has multiple lines.\n"
@@ -116,23 +97,31 @@ def _populate_directory(directory: Path) -> None:
     except (OSError, NotImplementedError):
         pass
 
+
 def test_parse_mode_consistency(mock_dir, mock_config):
     _populate_directory(mock_dir)
 
-    object.__setattr__(mock_config, "symbol_mapping", {"py" : (b"#", None, None)})
+    object.__setattr__(mock_config, "symbol_mapping", {"py": (b"#", None, None)})
 
     outputs: dict[ParseMode, array.array] = {}
     for parse_mode in ParseMode:
-        result: array.array = array.array("L", (0,0))
+        result: array.array = array.array("L", (0, 0))
         mock_config.parsing_mode = parse_mode
-        parse_directory(os.scandir(mock_dir),
-                        mock_config,
-                        result,
-                        -1,
-                        derive_file_parser(parse_mode))
+        parse_directory(
+            os.scandir(mock_dir),
+            mock_config,
+            result,
+            -1,
+            derive_file_parser(parse_mode),
+        )
         outputs[parse_mode] = result
 
-    assert len(set(tuple(o) for o in outputs.values())) == 1, \
-    " ".join(("Parsing modes produce different outputs",
-              "\n".join(f"{mode}: Total={total}, LOC={loc}"
-                       for mode, (total, loc) in outputs.items())))
+    assert len(set(tuple(o) for o in outputs.values())) == 1, " ".join(
+        (
+            "Parsing modes produce different outputs",
+            "\n".join(
+                f"{mode}: Total={total}, LOC={loc}"
+                for mode, (total, loc) in outputs.items()
+            ),
+        )
+    )
