@@ -3,4 +3,28 @@ repos:
     rev: 26.1.0
     hooks:
       - id: black
-    
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: check-yaml
+      - id: fix-byte-order-marker
+
+  - repo: local
+    hooks:
+      - id: autoflake.bash
+        name: autoflake
+        entry: .pre-commit/autoflake_runner.bash
+        language: script
+        description: Run autoflake against source
+
+  - repo: local
+    hooks:
+      - id: pytest_runner
+        name: pytest
+        language: script
+        description: Run pytest against source
+        entry: .pre-commit/pytest_runner.bash
