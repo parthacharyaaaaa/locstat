@@ -1,5 +1,5 @@
 # locstat
-## Get source code line statistics quickly
+## Get source code line statistics
 
 * [Installation](#installation)
 * [Usage](#usage)
