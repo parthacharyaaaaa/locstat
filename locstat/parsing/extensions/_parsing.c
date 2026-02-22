@@ -60,7 +60,7 @@ _parse_file_vm_map(PyObject *self, PyObject *args){
     }
 
     const unsigned char *view = (unsigned char *) mapped_region;
-    int total_lines = 0, loc = 0, commented_lines = 0; valid_symbols = 0;
+    int total_lines = 0, loc = 0, commented_lines = 0, valid_symbols = 0;
 
     struct CommentData comment_data;
     initialize_comment_data(
