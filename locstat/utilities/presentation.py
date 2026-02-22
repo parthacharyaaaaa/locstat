@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import Any, Final, Optional, Sequence, Union
 
 from locstat.data_structures.typing import OutputFunction
+from locstat.data_structures.output_keys import OutputKeys
 
 __all__ = ("dump_std_output", "dump_json_output", "OUTPUT_MAPPING")
 
@@ -30,36 +31,36 @@ def _dump_directory_tree(
     connector: str = "└── " if is_last else "├── "
     next_prefix: str = prefix + ("    " if is_last else "│   ")
     total, loc, commented, blank = (
-        node.get("total"),
-        node.get("loc"),
-        node.get("commented"),
-        node.get("blank"),
+        node.get(OutputKeys.TOTAL),
+        node.get(OutputKeys.LOC),
+        node.get(OutputKeys.COMMENTED),
+        node.get(OutputKeys.BLANK),
     )
-    header = f"{name}/ (total={total}, loc={loc}), commented={commented}, blank-{blank}"
+    header = f"{name}/ ({OutputKeys.TOTAL}={total}, {OutputKeys.LOC}={loc}, {OutputKeys.COMMENTED}={commented}, {OutputKeys.BLANK}={blank})"
 
     file.write(f"{prefix}{connector}{header}\n")
 
-    files: dict[str, Any] = node.get("files", {})
+    files: dict[str, Any] = node.get(OutputKeys.FILES, {})
     file_items: list[tuple[str, dict[str, int]]] = sorted(files.items())
 
     for idx, (path, meta) in enumerate(file_items):
         is_last_file: bool = idx == len(file_items) - 1 and not node.get(
-            "subdirectories"
+            OutputKeys.SUBDIRECTORIES
         )
         file_connector: str = "└── " if is_last_file else "├── "
         fname = os.path.basename(path)
 
         write_data: str = ", ".join(
             (
-                f"total={meta.get('total_lines')}",
-                f"loc={meta.get('loc')})",
-                f"commented={meta.get('commented')}",
-                f"commented={meta.get('commented')}",
+                f"total={meta.get(OutputKeys.TOTAL)}",
+                f"loc={meta.get(OutputKeys.LOC)})",
+                f"commented={meta.get(OutputKeys.COMMENTED)}",
+                f"blank={meta.get(OutputKeys.BLANK)}",
             )
         )
         file.write(f"{next_prefix}{file_connector}" f"{fname} {write_data}\n")
 
-    subdirs = node.get("subdirectories", {})
+    subdirs = node.get(OutputKeys.SUBDIRECTORIES, {})
     sub_items = sorted(subdirs.items())
 
     for idx, (subname, subnode) in enumerate(sub_items):
@@ -87,39 +88,39 @@ def dump_std_output(
     :param mode: Writing mode
     :type mode: Literal["w+", "a"]
     """
-    assert isinstance(output_mapping["general"], dict)
+    assert isinstance(output_mapping[OutputKeys.GENERAL], dict)
     with open(filepath, "w") as file:
-        file.write("GENERAL:\n")
+        file.write(f"{OutputKeys.GENERAL.capitalize()}:\n")
         file.write(
             "\n".join(
-                f"{field} : {value}"
-                for field, value in output_mapping["general"].items()
+                f"{field.capitalize()} : {value}"
+                for field, value in output_mapping[OutputKeys.GENERAL].items()
             )
         )
 
         file.write("\n\n")
 
         languages: Optional[dict[str, dict[str, int]]] = output_mapping.pop(
-            "languages", None
+            OutputKeys.LANGUAGES, None
         )
         if languages:
             headers: list[str] = [
                 "Extension",
-                "Files",
-                "Total",
-                "LOC",
-                "Commented",
-                "Blank",
+                OutputKeys.FILES.capitalize(),
+                OutputKeys.TOTAL.capitalize(),
+                OutputKeys.LOC.upper(),
+                OutputKeys.COMMENTED.capitalize(),
+                OutputKeys.BLANK.capitalize(),
             ]
 
             rows = [
                 (
                     lang,
-                    data["files"],
-                    data["total"],
-                    data["loc"],
-                    data["commented"],
-                    data["blank"],
+                    data[OutputKeys.FILES],
+                    data[OutputKeys.TOTAL],
+                    data[OutputKeys.LOC],
+                    data[OutputKeys.COMMENTED],
+                    data[OutputKeys.BLANK],
                 )
                 for lang, data in languages.items()
             ]
@@ -128,17 +129,19 @@ def dump_std_output(
                 max(len(str(col)) for col in column) for column in zip(headers, *rows)
             ]
 
-            file.write("LANGUAGE METADATA\n")
+            file.write(f"{OutputKeys.LANGUAGES.capitalize()}\n")
             file.write(_format_row(headers, widths))
-            file.write("-" * (sum(widths) + 6))
+            file.write("-" * (sum(widths) + 12))
             file.write("\n")
 
             for row in rows:
                 file.write(_format_row(row, widths))
 
-        tree = output_mapping.get("subdirectories")
+        tree = output_mapping.get(OutputKeys.SUBDIRECTORIES)
         if tree:
-            file.write("\nFILES & DIRECTORIES\n")
+            file.write(
+                f"\n{OutputKeys.FILES.capitalize()} & {OutputKeys.SUBDIRECTORIES.capitalize()}\n"
+            )
             for idx, (name, node) in enumerate(sorted(tree.items())):
                 _dump_directory_tree(
                     file,

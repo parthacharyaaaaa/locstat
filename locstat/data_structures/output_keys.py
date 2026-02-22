@@ -4,11 +4,16 @@ __all__ = ("OutputKeys",)
 
 
 class OutputKeys(StrEnum):
-    GENERAL = "General"
-    TOTAL = "TOTAL"
-    LOC = "LOC"
-    COMMENTED = "Comments"
-    BLANK = "Blank"
+    GENERAL = "general"
+    TOTAL = "total"
+    LOC = "loc"
+    COMMENTED = "comments"
+    BLANK = "blank"
 
-    FILES = "Files"
-    SUBDIRECTORIES = "SUBDIRECTORIES"
+    FILES = "files"
+    SUBDIRECTORIES = "subdirectories"
+    LANGUAGES = "languages"
+
+    TIME = "time"
+    SCANNED_AT = "scanned"
+    PLATFORM = "platform"

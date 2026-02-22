@@ -13,6 +13,7 @@ from locstat import __version__, __tool_name__
 from locstat.data_structures.config import ClocConfig
 from locstat.data_structures.typing import FileParsingFunction, LanguageMetadata
 from locstat.data_structures.verbosity import Verbosity
+from locstat.data_structures.output_keys import OutputKeys
 from locstat.parsing.directory import (
     parse_directory,
     parse_directory_record,
@@ -83,11 +84,11 @@ def main() -> int:
             args.min_chars,
         )
 
-        output_mapping["general"] = {
-            "loc": loc,
-            "total": total,
-            "commented": commented_lines,
-            "blank": blank,
+        output_mapping[OutputKeys.GENERAL] = {
+            OutputKeys.LOC: loc,
+            OutputKeys.TOTAL: total,
+            OutputKeys.COMMENTED: commented_lines,
+            OutputKeys.COMMENTED: blank,
         }
 
     else:
@@ -132,11 +133,11 @@ def main() -> int:
         if args.verbosity == Verbosity.BARE:
             line_data: array = array("L", (0, 0, 0))
             parse_directory(**kwargs, line_data=line_data)
-            output_mapping["general"] = {
-                "total": line_data[0],
-                "loc": line_data[1],
-                "commented": line_data[2],
-                "blank": line_data[0] - line_data[1] - line_data[2],
+            output_mapping[OutputKeys.GENERAL] = {
+                OutputKeys.TOTAL: line_data[0],
+                OutputKeys.LOC: line_data[1],
+                OutputKeys.COMMENTED: line_data[2],
+                OutputKeys.BLANK: line_data[0] - line_data[1] - line_data[2],
             }
         else:
             language_record: dict[str, dict[str, int]] = {}
@@ -144,30 +145,30 @@ def main() -> int:
 
             if args.verbosity == Verbosity.DETAILED:
                 output_mapping.update(parse_directory_verbose(**kwargs))
-                output_mapping["general"] = {
-                    "total": output_mapping.pop("total"),
-                    "loc": output_mapping.pop("loc"),
-                    "commented": output_mapping.pop("commented"),
-                    "blank": output_mapping.pop("blank"),
+                output_mapping[OutputKeys.GENERAL] = {
+                    OutputKeys.TOTAL: output_mapping.pop(OutputKeys.TOTAL),
+                    OutputKeys.LOC: output_mapping.pop(OutputKeys.LOC),
+                    OutputKeys.COMMENTED: output_mapping.pop(OutputKeys.COMMENTED),
+                    OutputKeys.BLANK: output_mapping.pop(OutputKeys.BLANK),
                 }
             else:
                 line_data: array = array("L", (0, 0, 0))
                 parse_directory_record(**kwargs, line_data=line_data)
-                output_mapping["general"] = {
-                    "total": line_data[0],
-                    "loc": line_data[1],
-                    "commented": line_data[2],
-                    "blank": line_data[0] - line_data[1] - line_data[2],
+                output_mapping[OutputKeys.GENERAL] = {
+                    OutputKeys.TOTAL: line_data[0],
+                    OutputKeys.LOC: line_data[1],
+                    OutputKeys.COMMENTED: line_data[2],
+                    OutputKeys.BLANK: line_data[0] - line_data[1] - line_data[2],
                 }
 
-            output_mapping["languages"] = language_record
+            output_mapping[OutputKeys.LANGUAGES] = language_record
 
     general_metadata: dict[str, str] = {
-        "time": f"{time.time()-epoch:.3f}s",
-        "scanned_at": datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
-        "platform": platform.system(),
+        OutputKeys.TIME: f"{time.time()-epoch:.3f}s",
+        OutputKeys.SCANNED_AT: datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
+        OutputKeys.PLATFORM: platform.system(),
     }
-    output_mapping["general"].update(general_metadata)  # type: ignore
+    output_mapping[OutputKeys.GENERAL].update(general_metadata)  # type: ignore
 
     # Emit results
     output_file: Union[int, str] = sys.stdout.fileno()
