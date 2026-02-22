@@ -75,7 +75,7 @@ def main() -> int:
         )
         singleline_symbol, multiline_start_symbol, multiline_end_symbol = comment_data
         epoch: float = time.time()
-        total, loc = file_parser_function(
+        total, loc, commented_lines, blank = file_parser_function(
             args.file,
             singleline_symbol,
             multiline_start_symbol,
@@ -83,7 +83,12 @@ def main() -> int:
             args.min_chars,
         )
 
-        output_mapping["general"] = {"loc": loc, "total": total}
+        output_mapping["general"] = {
+            "loc": loc,
+            "total": total,
+            "commented": commented_lines,
+            "blank": blank,
+        }
 
     else:
         extension_set: frozenset[str] = frozenset(
@@ -125,21 +130,35 @@ def main() -> int:
         output_mapping = {}
         epoch: float = time.time()
         if args.verbosity == Verbosity.BARE:
-            line_data: array = array("L", (0, 0))
+            line_data: array = array("L", (0, 0, 0))
             parse_directory(**kwargs, line_data=line_data)
-            output_mapping["general"] = {"total": line_data[0], "loc": line_data[1]}
+            output_mapping["general"] = {
+                "total": line_data[0],
+                "loc": line_data[1],
+                "commented": line_data[2],
+                "blank": line_data[0] - line_data[1] - line_data[2],
+            }
         else:
             language_record: dict[str, dict[str, int]] = {}
             kwargs.update({"language_record": language_record})
 
             if args.verbosity == Verbosity.DETAILED:
                 output_mapping.update(parse_directory_verbose(**kwargs))
-                total, loc = output_mapping.pop("total"), output_mapping.pop("loc")
-                output_mapping["general"] = {"total": total, "loc": loc}
+                output_mapping["general"] = {
+                    "total": output_mapping.pop("total"),
+                    "loc": output_mapping.pop("loc"),
+                    "commented": output_mapping.pop("commented"),
+                    "blank": output_mapping.pop("blank"),
+                }
             else:
-                line_data: array = array("L", (0, 0))
+                line_data: array = array("L", (0, 0, 0))
                 parse_directory_record(**kwargs, line_data=line_data)
-                output_mapping["general"] = {"total": line_data[0], "loc": line_data[1]}
+                output_mapping["general"] = {
+                    "total": line_data[0],
+                    "loc": line_data[1],
+                    "commented": line_data[2],
+                    "blank": line_data[0] - line_data[1] - line_data[2],
+                }
 
             output_mapping["languages"] = language_record
 

@@ -1,5 +1,7 @@
 from typing import Optional
 
+from locstat.data_structures.typing import FileLineData
+
 __all__ = ("_parse_file_vm_map", "_parse_file", "_parse_file_no_chunk")
 
 def _parse_file_vm_map(
@@ -9,7 +11,7 @@ def _parse_file_vm_map(
     multiline_end_symbol: Optional[bytes] = None,
     minimum_characters: int = 0,
     /,
-) -> tuple[int, int]: ...
+) -> FileLineData: ...
 def _parse_file(
     filename: str,
     singleline_symbol: Optional[bytes] = None,
@@ -17,7 +19,7 @@ def _parse_file(
     multiline_end_symbol: Optional[bytes] = None,
     minimum_characters: int = 0,
     /,
-) -> tuple[int, int]: ...
+) -> FileLineData: ...
 def _parse_file_no_chunk(
     filename: str,
     singleline_symbol: Optional[bytes] = None,
@@ -25,4 +27,4 @@ def _parse_file_no_chunk(
     multiline_end_symbol: Optional[bytes] = None,
     minimum_characters: int = 0,
     /,
-) -> tuple[int, int]: ...
+) -> FileLineData: ...

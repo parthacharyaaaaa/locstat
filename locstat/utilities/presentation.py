@@ -14,7 +14,9 @@ def _format_row(row: Sequence[Union[str, int]], widths: Sequence[int]) -> str:
         f"{row[0]:<{widths[0]}}  "
         f"{row[1]:>{widths[1]}}  "
         f"{row[2]:>{widths[2]}}  "
-        f"{row[3]:>{widths[3]}}\n"
+        f"{row[3]:>{widths[3]}}  "
+        f"{row[4]:>{widths[4]}}  "
+        f"{row[5]:>{widths[5]}}\n"
     )
 
 
@@ -27,8 +29,13 @@ def _dump_directory_tree(
 ) -> None:
     connector: str = "└── " if is_last else "├── "
     next_prefix: str = prefix + ("    " if is_last else "│   ")
-    total, loc = node.get("total"), node.get("loc")
-    header = f"{name}/ (total={total or 'N/A'}, loc={loc or 'N/A'})"
+    total, loc, commented, blank = (
+        node.get("total"),
+        node.get("loc"),
+        node.get("commented"),
+        node.get("blank"),
+    )
+    header = f"{name}/ (total={total}, loc={loc}), commented={commented}, blank-{blank}"
 
     file.write(f"{prefix}{connector}{header}\n")
 
@@ -42,12 +49,16 @@ def _dump_directory_tree(
         file_connector: str = "└── " if is_last_file else "├── "
         fname = os.path.basename(path)
 
-        file.write(
-            f"{next_prefix}{file_connector}"
-            f"{fname} (total={meta.get('total_lines')}, loc={meta.get('loc')})\n"
+        write_data: str = ", ".join(
+            (
+                f"total={meta.get('total_lines')}",
+                f"loc={meta.get('loc')})",
+                f"commented={meta.get('commented')}",
+                f"commented={meta.get('commented')}",
+            )
         )
+        file.write(f"{next_prefix}{file_connector}" f"{fname} {write_data}\n")
 
-    # Subdirectories (recursive)
     subdirs = node.get("subdirectories", {})
     sub_items = sorted(subdirs.items())
 
@@ -92,10 +103,24 @@ def dump_std_output(
             "languages", None
         )
         if languages:
-            headers: list[str] = ["Extension", "Files", "Total", "LOC"]
+            headers: list[str] = [
+                "Extension",
+                "Files",
+                "Total",
+                "LOC",
+                "Commented",
+                "Blank",
+            ]
 
             rows = [
-                (lang, data["files"], data["total"], data["loc"])
+                (
+                    lang,
+                    data["files"],
+                    data["total"],
+                    data["loc"],
+                    data["commented"],
+                    data["blank"],
+                )
                 for lang, data in languages.items()
             ]
 

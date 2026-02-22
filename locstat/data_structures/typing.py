@@ -3,6 +3,7 @@ from typing import Any, Optional, Protocol, TypeAlias, TypeVar, Union
 
 __all__ = (
     "LanguageMetadata",
+    "FileLineData",
     "OutputFunction",
     "SupportsBuffer",
     "FileParsingFunction",
@@ -10,6 +11,7 @@ __all__ = (
 )
 
 LanguageMetadata: TypeAlias = tuple[Optional[bytes], Optional[bytes], Optional[bytes]]
+FileLineData: TypeAlias = tuple[int, int, int, int]
 
 
 class OutputFunction(Protocol):
@@ -35,7 +37,7 @@ class FileParsingFunction(Protocol):
         multiline_end_symbol: Optional[bytes] = None,
         minimum_characters: int = 0,
         /,
-    ) -> tuple[int, int]: ...
+    ) -> FileLineData: ...
 
 
 T = TypeVar("T", covariant=True)

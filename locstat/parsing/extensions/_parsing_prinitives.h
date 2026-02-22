@@ -8,7 +8,7 @@ struct CommentData;
 extern void
 _parse_buffer(unsigned char *buffer, size_t buffer_size,
     Py_ssize_t minimum_characters, int *valid_characters,
-    int *total, int *loc,
+    int *total, int *loc, int *commented_lines,
     struct CommentData *comment_data);
 
 #endif

@@ -15,7 +15,7 @@ struct CommentData {
     Py_ssize_t multiline_start_pointer;
     Py_ssize_t multiline_end_pointer;
 
-    bool in_singleline, in_multiline;
+    bool in_singleline, in_multiline, had_multiline;
 };
 
 extern void initialize_comment_data(struct CommentData *comment_data,

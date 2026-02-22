@@ -9,7 +9,7 @@ static bool _is_ignorable(unsigned char c) {
 void
 _parse_buffer(unsigned char *buffer, size_t buffer_size,
     Py_ssize_t minimum_characters, int *valid_characters,
-    int *total, int *loc,
+    int *total, int *loc, int *commented_lines,
     struct CommentData *comment_data){
 
     for (size_t i = 0; i < buffer_size; i++){
@@ -17,6 +17,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
             if (buffer[i] == '\n') {
                 (*total)++;
                 (*loc) += ((*valid_characters) > minimum_characters);
+                (*commented_lines)++;
                 *valid_characters = 0;
             }
             else if (buffer[i] == comment_data->multiline_end_symbol[comment_data->multiline_end_pointer]) {
@@ -24,6 +25,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
                 if (comment_data->multiline_end_pointer == comment_data->multiline_end_length) {
                     comment_data->in_multiline = false;
                     comment_data->multiline_end_pointer = 0;
+                    comment_data->had_multiline = true;
                 }
             } else {
                 comment_data->multiline_end_pointer = 0;
@@ -34,6 +36,7 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
         if (comment_data->in_singleline) {
             if (buffer[i] == '\n') {
                 comment_data->in_singleline = false;
+                (*commented_lines)++;
             } else {
                 continue;
             }
@@ -77,7 +80,9 @@ _parse_buffer(unsigned char *buffer, size_t buffer_size,
         if (buffer[i] == '\n') {
             (*total)++;
             (*loc) += ((*valid_characters) >= minimum_characters);
+            (*commented_lines) += (comment_data->had_multiline && (*valid_characters) < minimum_characters);
             *valid_characters = 0;
+            comment_data->had_multiline = false;
         } else {
             (*valid_characters)++;
         }

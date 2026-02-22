@@ -62,11 +62,12 @@ def parse_directory(
             if not (singleLine or multi_start):
                 continue
 
-            tl, l = file_parsing_function(
+            tl, l, c, *_ = file_parsing_function(
                 dir_entry.path, singleLine, multi_start, multi_end, minimum_characters
             )
             line_data[0] += tl
             line_data[1] += l
+            line_data[2] += c
             continue
 
         if not depth:
@@ -143,14 +144,19 @@ def parse_directory_record(
             if not (singleLine or multi_start):
                 continue
 
-            language_record.setdefault(extension, {"total": 0, "loc": 0, "files": 0})
-            tl, l = file_parsing_function(
+            language_record.setdefault(
+                extension, {"total": 0, "loc": 0, "commented": 0, "files": 0}
+            )
+            tl, l, c, *_ = file_parsing_function(
                 dir_entry.path, singleLine, multi_start, multi_end, minimum_characters
             )
             line_data[0] += tl
             line_data[1] += l
+            line_data[2] += c
+
             language_record[extension]["total"] += tl
             language_record[extension]["loc"] += l
+            language_record[extension]["commented"] += c
             language_record[extension]["files"] += 1
             continue
 
@@ -169,6 +175,13 @@ def parse_directory_record(
             file_filter_function,
             directory_filter_function,
             minimum_characters,
+        )
+
+    for extension in language_record:
+        language_record[extension]["blank"] = (
+            language_record[extension]["total"]
+            - language_record[extension]["loc"]
+            - language_record[extension]["commented"]
         )
 
 
@@ -222,7 +235,7 @@ def parse_directory_verbose(
     if output_mapping is None:
         output_mapping = {}
 
-    directory_total = directory_loc = 0
+    directory_total = directory_loc = directory_commented = 0
     files: dict[str, Any] = {}
     subdirectories: dict[str, Any] = {}
 
@@ -240,9 +253,11 @@ def parse_directory_verbose(
 
             if not (single or multi_end):
                 continue
-            language_record.setdefault(extension, {"total": 0, "loc": 0, "files": 0})
+            language_record.setdefault(
+                extension, {"total": 0, "loc": 0, "commented": 0, "files": 0}
+            )
 
-            file_total, file_loc = file_parsing_function(
+            file_total, file_loc, commented, blank = file_parsing_function(
                 dir_entry.path,
                 single,
                 multi_start,
@@ -252,14 +267,18 @@ def parse_directory_verbose(
 
             language_record[extension]["total"] += file_total
             language_record[extension]["loc"] += file_loc
+            language_record[extension]["commented"] += commented
             language_record[extension]["files"] += 1
 
             directory_total += file_total
             directory_loc += file_loc
+            directory_commented += commented
 
             files[dir_entry.path] = {
                 "loc": file_loc,
                 "total_lines": file_total,
+                "commented": commented,
+                "blank": blank,
             }
 
         elif depth and dir_entry.is_dir() and directory_filter_function(dir_entry.path):
@@ -278,6 +297,7 @@ def parse_directory_verbose(
             subdirectories[dir_entry.name] = child
             directory_total += child["total"]
             directory_loc += child["loc"]
+            directory_commented += child["commented"]
 
     output_mapping.update(
         {
@@ -285,7 +305,16 @@ def parse_directory_verbose(
             "subdirectories": subdirectories,
             "total": directory_total,
             "loc": directory_loc,
+            "commented": directory_commented,
+            "blank": directory_total - directory_loc - directory_commented,
         }
     )
+
+    for extension in language_record:
+        language_record[extension]["blank"] = (
+            language_record[extension]["total"]
+            - language_record[extension]["loc"]
+            - language_record[extension]["commented"]
+        )
 
     return output_mapping

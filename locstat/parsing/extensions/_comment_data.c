@@ -19,4 +19,5 @@ void initialize_comment_data(struct CommentData *comment_data,
 
     comment_data->in_singleline = false;
     comment_data->in_multiline = false;
+    comment_data->had_multiline = false;
 }
