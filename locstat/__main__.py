@@ -129,7 +129,7 @@ def main() -> int:
             "depth": args.max_depth,
         }
         output_mapping = {}
-        epoch: float = time.time()
+        epoch: float = time.perf_counter()
         if args.verbosity == Verbosity.BARE:
             line_data: array = array("L", (0, 0, 0))
             parse_directory(**kwargs, line_data=line_data)
@@ -164,7 +164,7 @@ def main() -> int:
             output_mapping[OutputKeys.LANGUAGES] = language_record
 
     general_metadata: dict[str, str] = {
-        OutputKeys.TIME: f"{time.time()-epoch:.3f}s",
+        OutputKeys.TIME: f"{time.perf_counter()-epoch:.3f}s",
         OutputKeys.SCANNED_AT: datetime.now().strftime("%d/%m/%y, at %H:%M:%S"),
         OutputKeys.PLATFORM: platform.system(),
     }
