@@ -35,6 +35,7 @@ A primary action must be specified when invoking the tool through the command li
 * **-h/--help**: Display the help message and exit
 
 * **-c/--config**: Display and optionally edit the configuration settings and exit
+* **-clm/--copy-language-metadata**: Copy language metadata file to given filepath
 * **-rc/--restore-config**: Restore configuration settings
 
 * **-f/--file**: Filepath to parse
@@ -88,7 +89,7 @@ Note: These options are **mutually exclusive**
 
 **-lm/--language-metadata**: Specify JSON file to supply additional comment data for languages. This file is read and used instead of the default language metadata file.
 
-**-rc/--restore-config**: Resore configuration file to default its state.
+**-rc/--restore-config**: Restore configuration file to default its state.
 
 ### Emitting Results
 ---
