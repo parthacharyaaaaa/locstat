@@ -32,7 +32,7 @@ jobs:
         with:
           checkpath: ./locstat
           options: --check --remove-all-unused-imports --ignore-init-module-imports -r -v
-          no-commit: true
+          no_commit: true
 
   test:
     name: (pytest) Run tests
