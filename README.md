@@ -100,12 +100,14 @@ Let's run locstat against a cloned repository of `cpython-main`
 ```bash
 $ locstat -d /home/tcn/targets/cpython-main/
 
-GENERAL:
-total : 2155349
-loc : 1722995
-time : 0.913s
-scanned_at : 19/02/26, at 16:05:11
-platform : Linux
+General:
+Total : 2155349
+Loc : 1722995
+Comments : 213946
+Blank : 218408
+Time : 0.911s
+Scanned : 22/02/26, at 15:40:51
+Platform : Linux
 ```
 
 Additionally, we can fetch per-extension metadata using the `REPORT` verbosity mode.
@@ -113,36 +115,38 @@ Additionally, we can fetch per-extension metadata using the `REPORT` verbosity m
 ```bash
 $ locstat -d /home/tcn/targets/cpython-main/ -vb REPORT
 
-GENERAL:
-total : 2155349
-loc : 1722995
-time : 0.204s
-scanned_at : 19/02/26, at 16:06:15
-platform : Linux
+General:
+Total : 2155349
+Loc : 1722995
+Comments : 213946
+Blank : 218408
+Time : 0.196s
+Scanned : 22/02/26, at 15:41:05
+Platform : Linux
 
-LANGUAGE METADATA
-Extension  Files    Total     LOC
----------------------------------
-py          2211  1088097  851618
-bat           32     2327    1959
-ps1            6      571     451
-sh            14      918     582
-css            6     3248    2570
-c            485   652306  498587
-h            637   356061  319201
-js            10     2431    1775
-html          18    10327    9132
-xml          119    31796   31615
-m             10     1029     807
-xsl            2       33      16
-cpp            7     4989    3796
-vbs            1        1       0
-pyi            1        4       2
-asm            1       46      18
-lisp           1      692     502
-ts             2       37      32
-kts            3      307     236
-kt             2      129      96
+Languages
+Extension  Files    Total     LOC  Comments   Blank
+-----------------------------------------------------
+py          2211  1088097  851618    109836  126643
+bat           32     2327    1959         0     368
+ps1            6      571     451        48      72
+sh            14      918     582       237      99
+css            6     3248    2570       202     476
+c            485   652306  498587     95501   58218
+h            637   356061  319201      7124   29736
+js            10     2431    1775       281     375
+html          18    10327    9132        51    1144
+xml          119    31796   31615        25     156
+m             10     1029     807        85     137
+xsl            2       33      16        15       2
+cpp            7     4989    3796       385     808
+vbs            1        1       0         0       1
+pyi            1        4       2         1       1
+asm            1       46      18        26       2
+lisp           1      692     502        81     109
+ts             2       37      32         2       3
+kts            3      307     236        31      40
+kt             2      129      96        15      18
 ```
 **Note**: The drop in scanning time in the second example is thanks to page caching following the first example.
 
@@ -170,14 +174,6 @@ However, to allow for customizations, locstat introduces 2 commands.
 **Example**
 ```bash
 $ locstat --copy-language-metadata foo.json
-$ locstat -f bar.py --language-metadata foo.json
-GENERAL:
-loc : 4
-total : 5
-time : 0.000s
-scanned_at : 21/02/26, at 16:24:19
-platform : Linux
-
 $ locstat --config language_metadata_path foo.json
 $ locstat --config
 language_metadata_path : foo.json
